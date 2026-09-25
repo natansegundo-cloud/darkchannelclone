@@ -1,2 +1,0 @@
-asset_id,asset_type,source,provider,license,production_method,scene_ids,first_used_scene,version,sha256,status,legacy_asset_id,prompt_positive,prompt_negative
-{{ASSET_ID}},{{ASSET_TYPE}},{{SOURCE}},{{PROVIDER}},{{LICENSE}},{{PRODUCTION_METHOD}},{{SCENE_IDS}},{{FIRST_USED_SCENE}},1.0,{{SHA256}},planejado,{{LEGACY_ASSET_ID}},{{PROMPT_POSITIVE}},{{PROMPT_NEGATIVE}}

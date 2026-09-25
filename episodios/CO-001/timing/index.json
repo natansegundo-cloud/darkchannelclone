@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "episode_id": "CO-001",
+  "canonical_provider": "azure_sdk",
+  "timing_quality": "WORD_BOUNDARY_REAL",
+  "same_synthesis_audio_timing": true,
+  "audio_binaries_versioned": false,
+  "segments": [
+    {"beats": "B001-B006", "file": "b001-b006.json"},
+    {"beats": "B007-B009", "file": "b007-b009.json"},
+    {"beats": "B010-B013", "file": "b010-b013.json"}
+  ]
+}

@@ -1,6 +1,0 @@
-asset_id,category,file,source,license,first_used_episode,first_used_scene,status,notes
-CO_CHARACTER_RIG_V4,character,assets/characters/capital_oculto_character_rig_v4.svg,fornecido pelo usuario,proprietario do projeto,CO-001,S001,active,"char-base e o unico symbol; oito partes corporais permanecem groups"
-PHOSPHOR_DEVICE_MOBILE,icon,assets/icons/phosphor/regular/device-mobile.svg,https://github.com/phosphor-icons/core,MIT,CO-001,S001,active,Phosphor regular incorporado localmente
-PHOSPHOR_TREND_UP,icon,assets/icons/phosphor/regular/trend-up.svg,https://github.com/phosphor-icons/core,MIT,CO-001,S001,active,Phosphor regular incorporado localmente
-PHOSPHOR_RULER,icon,assets/icons/phosphor/regular/ruler.svg,https://github.com/phosphor-icons/core,MIT,CO-001,S007,active,Phosphor regular incorporado localmente
-PHOSPHOR_RECEIPT,icon,assets/icons/phosphor/regular/receipt.svg,https://github.com/phosphor-icons/core,MIT,CO-001,S033,active,Phosphor regular incorporado localmente

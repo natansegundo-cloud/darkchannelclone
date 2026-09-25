@@ -1,3 +1,0 @@
-experimento_id,video_id,tipo,status,data_inicio_hora,data_fim_hora,janela_avaliacao_horas,variante_controle,variante_teste,metrica_primaria,valor_controle,valor_teste,delta_pct,amostra_controle,amostra_teste,decisao,aprendizado,observacoes
-EXEMPLO_EXP_001,EXEMPLO_VIDEO_001,thumbnail,EXEMPLO,2026-01-02T18:00:00-03:00,2026-01-03T18:00:00-03:00,24,A,B,ctr_impressoes_pct,4.0,4.9,22.5,5000,5100,MANTER_B,Contraste de consequência superou descrição genérica,Linha EXEMPLO segura para remover
-CO-001-EXP-001,CO-001,titulo_thumbnail,PLANEJADO,,,168,A,B|C,watch_time_share,,,,,,AGUARDAR,Resultado será registrado após amostra suficiente,Usar o teste nativo do YouTube com as três combinações quando disponível

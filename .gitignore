@@ -25,6 +25,7 @@ venv/
 *.flac
 *.aep
 *.prproj
+output/
 
 # Perfis e logs temporários de navegadores usados nos testes
 tests/**/logs/
@@ -33,6 +34,8 @@ tests/**/logs/
 *.tmp
 *.temp
 ~$*
+.pytest_cache/
+.coverage
 
 # Segredos locais
 .env

@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "project_id": "capital-oculto",
+  "active_episode": "CO-001",
+  "canonical_provider": "azure_sdk",
+  "timing_quality": "WORD_BOUNDARY_REAL",
+  "pipeline": [
+    "script",
+    "narration",
+    "word_boundary_real",
+    "scene_map",
+    "illustrated_image",
+    "simple_motion",
+    "final_render"
+  ],
+  "generated_output": "output"
+}

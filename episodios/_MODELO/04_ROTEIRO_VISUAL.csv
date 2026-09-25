@@ -1,2 +1,0 @@
-scene_id,beat_ids,anchor_start,anchor_end,layout_id,accent,dominant_idea,context,character_role,character_scale,asset_ids,events_json,continuity_in,continuity_out,status
-S001,B001,"{{ANCHOR_START_S001}}","{{ANCHOR_END_S001}}",A,lime,"{{IDEIA_DOMINANTE_S001}}","{{CONTEXTO_S001}}","{{PERSONAGEM_S001}}","{{ESCALA_PERSONAGEM_S001}}","{{ASSETS_S001}}","[]","","{{CONTINUIDADE_OUT_S001}}",planejada

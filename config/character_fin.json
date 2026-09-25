@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "character_id": "FIN",
+  "canonical_asset": "assets/character_bible/fin.svg",
+  "role": "recurring_visual_protagonist",
+  "canvas": "320x640",
+  "palette": {
+    "black": "#111111",
+    "lime": "#C4E538",
+    "off_white": "#F4F3EF"
+  },
+  "identity_locks": [
+    "proportions",
+    "face",
+    "tie",
+    "stroke_weight",
+    "base_silhouette",
+    "palette"
+  ]
+}

@@ -7,7 +7,7 @@ from typing import Any
 from xml.sax.saxutils import escape
 
 from . import ProviderError, ProviderResult
-from .voice_pacing_v2 import read_pcm_wav
+from .pacing import read_pcm_wav
 
 
 SDK_PACKAGE = "azure-cognitiveservices-speech==1.51.2"

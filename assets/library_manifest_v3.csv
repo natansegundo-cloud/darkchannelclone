@@ -1,9 +1,0 @@
-asset_id,category,file,source,license,first_used_episode,first_used_scene,status,notes
-CO_CHARACTER_RIG_V4,character,assets/characters/capital_oculto_character_rig_v4.svg,fornecido pelo usuario,proprietario do projeto,CO-001,S001,active_v3,"char-base e o unico symbol; oito partes corporais permanecem groups; personagem opcional"
-PHOSPHOR_DEVICE_MOBILE,icon,assets/icons/phosphor/regular/device-mobile.svg,https://github.com/phosphor-icons/core,MIT,CO-001,S001,active_v3,Phosphor regular incorporado somente na cena que usa o icone
-PHOSPHOR_TREND_UP,icon,assets/icons/phosphor/regular/trend-up.svg,https://github.com/phosphor-icons/core,MIT,CO-001,S001,active_v3,Phosphor regular incorporado somente na cena que usa o icone
-PHOSPHOR_RULER,icon,assets/icons/phosphor/regular/ruler.svg,https://github.com/phosphor-icons/core,MIT,CO-001,S007,active_v3,Phosphor regular incorporado somente na cena que usa o icone
-PHOSPHOR_RECEIPT,icon,assets/icons/phosphor/regular/receipt.svg,https://github.com/phosphor-icons/core,MIT,CO-001,S033,active_v3,Phosphor regular incorporado somente na cena que usa o icone
-CO_CALENDAR_STRIP_V3,component,assets/components/v3/calendar_strip.svg,criado para o sistema visual V3,proprietario do projeto,CO-001,S002,candidate_v3,fonte unica do calendario sequencial
-CO_MECHANISM_TRIAD_V3,metaphor,assets/metaphors/v3/mechanism_triad.svg,criado para o sistema visual V3,proprietario do projeto,CO-001,S005,candidate_v3,fonte unica da triade normal comparacao contas
-CO_BRAIN_ADAPTATION_V3,metaphor,assets/metaphors/v3/brain_adaptation.svg,criado para o sistema visual V3,proprietario do projeto,CO-001,S006,candidate_v3,fonte unica da metafora de adaptacao

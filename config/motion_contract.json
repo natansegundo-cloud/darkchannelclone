@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "contract_id": "CO_MOTION_CONTRACT_V1",
   "voice_pacing": {
-    "provider": "azure_speech_rest",
+    "provider": "azure_sdk",
     "voice": "pt-BR-AntonioNeural",
     "rate": "-7%",
     "pitch": "0%",

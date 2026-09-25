@@ -1,8 +1,0 @@
-asset_id,asset_type,source,provider,license,production_method,scene_ids,first_used_scene,version,sha256,status,legacy_asset_id,prompt_positive,prompt_negative
-CHAR_RIG_V4,rig,assets/characters/capital_oculto_character_rig_v4.svg,capital_oculto,proprietary_project_asset,official_reuse,S001|S003|S006,S001,4.0,93a2630501a7390d838ec1a1424a044bedc784c16e8e978f0c88d5c1ec015aef,approved,,,
-PH_DEVICE_MOBILE,icon,assets/icons/phosphor/regular/device-mobile.svg,phosphor,MIT,library,S001|S002|S003,S001,regular,bd0cdd2dd5e79141214adfe93c80ccfaab14847ba932861a308f84aec87c1827,approved,,,
-PH_TREND_UP,icon,assets/icons/phosphor/regular/trend-up.svg,phosphor,MIT,library,S001,S001,regular,f80c1914447e52251cd0b493f2435382908fc76564259bc1119ff76c9edb0607,approved,,,
-PH_RECEIPT,icon,assets/icons/phosphor/regular/receipt.svg,phosphor,MIT,library,S004,S004,regular,dde2816d74dbfb7b8aff12af116d295936b8b521c2702076fce6f3fda6decf89,approved,,,
-COMP_CALENDAR_STRIP,component,assets/components/v3/calendar_strip.svg,capital_oculto,proprietary_project_asset,official_reuse,S002,S002,1.0,88f80839cc467fce877129505a041c400d78351946bad8499bc80dddb68b0d39,approved,A04,,
-MET_MECHANISM_TRIAD,metaphor,assets/metaphors/v3/mechanism_triad.svg,capital_oculto,proprietary_project_asset,official_reuse,S005,S005,1.0,6324796b623ff863006f43edd6359ea2838450fd1817ba5211a85d584600739c,approved,A05,,
-MET_BRAIN_ADAPTATION,metaphor,assets/metaphors/v3/brain_adaptation.svg,capital_oculto,proprietary_project_asset,official_reuse,S006,S006,1.0,fa7ea79a3a1dad48b8515d627e706ca8a7c0666f8362540915248a9faabc7d68,approved,A06,,

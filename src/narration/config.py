@@ -14,8 +14,8 @@ NARRATORS_PATH = ROOT / "config" / "narrators.json"
 LOCAL_VOICE_PATH = ROOT / "config" / "voz_local.json"
 MOTION_CONTRACT_PATH = ROOT / "config" / "motion_contract.json"
 DEFAULT_ENV_PATH = ROOT / "scripts" / ".env"
-DEFAULT_INPUT = ROOT / "episodios" / "CO-001-por-que-ganhar-mais-nao-basta" / "03_ROTEIRO_NARRACAO.md"
-DEFAULT_OUTPUT = ROOT / "tests" / "audiovisual_pilot_s001_s006"
+DEFAULT_INPUT = ROOT / "episodios" / "CO-001" / "roteiro_narracao.md"
+DEFAULT_OUTPUT = ROOT / "output" / "audio" / "CO-001"
 
 
 class ConfigError(RuntimeError):

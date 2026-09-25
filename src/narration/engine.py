@@ -6,8 +6,6 @@ import argparse
 import copy
 import hashlib
 import json
-import os
-import re
 import sys
 from array import array
 from datetime import datetime
@@ -16,8 +14,8 @@ from typing import Any, Callable
 
 from . import config
 from .providers import ProviderError, ProviderResult
-from .providers import azure_rest, azure_sdk, local_kokoro
-from .providers.voice_pacing_v2 import (
+from .providers import azure_sdk, local_kokoro
+from .providers.pacing import (
     BEATS_DATA,
     align_words,
     beats_for,
@@ -41,8 +39,6 @@ def _provider_name(value: str) -> str:
 
 
 def _provider_function(name: str) -> Callable[..., ProviderResult]:
-    if name == "azure_rest":
-        return azure_rest.synthesize
     if name == "azure_sdk":
         return azure_sdk.synthesize
     if name == "local_kokoro":
@@ -123,14 +119,14 @@ def run_narration(
     selected_beats = _select_beats(beats, voice_pacing)
     if not selected_beats:
         raise NarrationError("Nenhum beat selecionado para síntese.")
-    raw_dir = raw_dir or output_path.parent / "raw_v2"
-    raw_combined_path = raw_combined_path or raw_dir / "narration_raw_v2.wav"
+    raw_dir = raw_dir or output_path.parent / "raw"
+    raw_combined_path = raw_combined_path or raw_dir / "narration_raw.wav"
     raw_dir.mkdir(parents=True, exist_ok=True)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     timing_path.parent.mkdir(parents=True, exist_ok=True)
 
     key = region = ""
-    if provider in {"azure_rest", "azure_sdk"}:
+    if provider == "azure_sdk":
         try:
             key, region = config.azure_credentials(narrator, env_file)
         except config.ConfigError as exc:
@@ -156,7 +152,7 @@ def run_narration(
             sample_rate = current_rate
         elif current_rate != sample_rate:
             raise NarrationError("Taxa de amostragem divergente entre beats.")
-        raw_path = raw_dir / f"{beat['beat_id'].lower()}_azure_antonio_v2.wav"
+        raw_path = raw_dir / f"{beat['beat_id'].lower()}_azure_antonio.wav"
         write_pcm_wav(raw_path, sample_rate, samples)
         offset = cursor_samples / sample_rate
         if provider == "azure_sdk":
@@ -230,8 +226,8 @@ def run_narration(
     timing = {
         "schema_version": "2.0",
         "episode_id": episode_id,
-        "scope": "pilot_s001_s006_v2" if len(selected_beats) == len(BEATS_DATA) else "selected_beats",
-        "provider": "azure_speech_sdk" if provider == "azure_sdk" else ("kokoro_onnx" if provider == "local_kokoro" else "azure_speech_rest"),
+        "scope": "full_script" if len(selected_beats) == len(BEATS_DATA) else "selected_beats",
+        "provider": "azure_speech_sdk" if provider == "azure_sdk" else "kokoro_onnx",
         "voice": narrator["voice"],
         "language": narrator.get("language", "pt-BR"),
         "delivery": {"rate": narrator.get("delivery", {}).get("rate", "0%"), "pitch": narrator.get("delivery", {}).get("pitch", "0%"), "volume": "default"},
@@ -263,13 +259,13 @@ def build_parser(*, add_help: bool = True) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Engine único de narração do Capital Oculto.", add_help=add_help)
     parser.add_argument("--entrada", "--input", type=Path, default=config.DEFAULT_INPUT)
     parser.add_argument("--beats", default=",".join(beat["beat_id"] for beat in BEATS_DATA))
-    parser.add_argument("--saida", "--output", type=Path, default=config.DEFAULT_OUTPUT / "audio" / "processed" / "narration_azure_antonio_v2.wav")
-    parser.add_argument("--timing-json", type=Path, default=config.DEFAULT_OUTPUT / "timing" / "03A_AUDIO_TIMING_v2.json")
-    parser.add_argument("--raw-dir", type=Path, default=config.DEFAULT_OUTPUT / "audio" / "raw_v2")
-    parser.add_argument("--raw-combined", type=Path, default=config.DEFAULT_OUTPUT / "audio" / "raw_v2" / "narration_raw_v2.wav")
+    parser.add_argument("--saida", "--output", type=Path, default=config.DEFAULT_OUTPUT / "narration.wav")
+    parser.add_argument("--timing-json", type=Path, default=config.DEFAULT_OUTPUT / "timing.json")
+    parser.add_argument("--raw-dir", type=Path, default=config.DEFAULT_OUTPUT / "raw")
+    parser.add_argument("--raw-combined", type=Path, default=config.DEFAULT_OUTPUT / "raw" / "narration_raw.wav")
     parser.add_argument("--episodio-id", "--episode", dest="episode_id", default="CO-001")
     parser.add_argument("--narrator", default=None)
-    parser.add_argument("--provider", choices=("azure_rest", "azure_sdk", "local_kokoro", "azure", "kokoro", "local"), default=None)
+    parser.add_argument("--provider", choices=("azure_sdk", "local_kokoro", "azure", "kokoro", "local"), default=None)
     parser.add_argument("--env-file", type=Path, default=config.DEFAULT_ENV_PATH)
     parser.add_argument("--pause-ms", type=int, default=None)
     parser.add_argument("--no-processing", action="store_true")

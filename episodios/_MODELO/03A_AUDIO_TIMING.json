@@ -1,7 +1,0 @@
-{
-  "schema_version": "1.0",
-  "episode_id": "{{EPISODIO_ID}}",
-  "status": "GENERATED_FILE_DO_NOT_EDIT",
-  "generated_by": "scripts/gerar_narracao_local.py --timing-json",
-  "beats": []
-}

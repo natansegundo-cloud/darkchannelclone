@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
-  <title>B — State Transformation — Typography Led</title>
-  <desc>A exceção perde escala enquanto rotina assume o campo.</desc>
-  <rect width="1920" height="1080" fill="#111111"/>
-  <text x="128" y="230" fill="#E8A33D" font-family="Bahnschrift, sans-serif" font-size="84" font-weight="800" letter-spacing="1">EXCEÇÃO</text>
-  <path d="M500 274 C612 338 647 436 684 543 C725 663 835 720 1040 756 L1004 854 C729 820 560 714 501 547 C465 443 448 350 500 274 Z" fill="#C4E538"/>
-  <rect x="486" y="882" width="1338" height="22" fill="#C4E538"/>
-  <text x="482" y="850" fill="#F4F3EF" font-family="Bahnschrift, sans-serif" font-size="292" font-weight="900" letter-spacing="-14">ROTINA</text>
-</svg>
