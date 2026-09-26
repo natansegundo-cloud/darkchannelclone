@@ -13,6 +13,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.narration import engine  # noqa: E402
+from src.render import engine as render_engine  # noqa: E402
 from src.visuals import generation_runner  # noqa: E402
 
 
@@ -29,6 +30,11 @@ def build_parser() -> argparse.ArgumentParser:
         parents=[generation_runner.build_parser(add_help=False)],
         help="Gera e valida o lote visual ilustrado em tiers.",
     )
+    subcommands.add_parser(
+        "render",
+        parents=[render_engine.build_parser(add_help=False)],
+        help="Executa preflight e render final fail-closed.",
+    )
     return parser
 
 
@@ -39,6 +45,8 @@ def main(argv: list[str] | None = None) -> int:
         return engine.main(raw_args[1:])
     if raw_args[0] == "visuals":
         return generation_runner.main(raw_args[1:])
+    if raw_args[0] == "render":
+        return render_engine.main(raw_args[1:])
     raise SystemExit(f"subcomando desconhecido: {raw_args[0]}")
 
 

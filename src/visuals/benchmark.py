@@ -19,6 +19,7 @@ from .providers import (
     UNKNOWN_BILLED_TIMEOUT,
     VisualProvider,
 )
+from .references import resolve_scene_references
 
 
 DEFAULT_BENCHMARK_CONFIG = ROOT / "config" / "visual_benchmark.json"
@@ -133,21 +134,6 @@ def _benchmark_lock(output_dir: Path, *, dry_run: bool, run_id: str):
         lock_path.unlink(missing_ok=True)
 
 
-def _references(
-    scene: Mapping[str, Any],
-    profile: Mapping[str, Any],
-    config: Mapping[str, Any],
-) -> list[str]:
-    if scene["scene_type"] not in {"CHARACTER_SCENE", "ENVIRONMENT_SCENE"}:
-        return []
-    references = list(profile["required_references"])
-    if config.get("include_scene_reference"):
-        scene_reference = profile.get("scene_reference_images", {}).get(scene["scene_id"])
-        if scene_reference and (ROOT / scene_reference).is_file():
-            references.append(scene_reference)
-    return references
-
-
 def _result_record(
     *,
     model: str,
@@ -191,7 +177,11 @@ def _run_benchmark_unlocked(
     scene = build_generation_jobs([scene_id])[0]
     profile = load_reference_profile()
     compiled_prompt = build_prompt(scene)
-    references = _references(scene, profile, benchmark_config)
+    references = resolve_scene_references(
+        scene,
+        profile,
+        include_scene_reference=bool(benchmark_config.get("include_scene_reference")),
+    )
     output_dir.mkdir(parents=True, exist_ok=True)
     if not dry_run and provider is None:
         configure_api_key_environment()

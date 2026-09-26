@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import csv
 import base64
 from collections import Counter
 from copy import deepcopy
@@ -12,6 +11,13 @@ import unittest
 import zlib
 from pathlib import Path
 
+from src.episodes import (
+    load_json as load_episode_json,
+    load_visual_script,
+    resolve_active_episode,
+    validate_scene_map,
+    validate_visual_script,
+)
 from src.visuals.engine import (
     ALLOWED_SCENE_FIELDS,
     REQUIRED_SCENE_FIELDS,
@@ -28,6 +34,8 @@ from src.visuals.deterministic_renderer import (
     render_deterministic_scene,
 )
 import src.visuals.deterministic_renderer as deterministic_renderer
+import src.visuals.prompt_builder as prompt_builder
+import src.visuals.routing as visual_routing
 from src.visuals.prompt_builder import TEXT_POLICY_MODES, build_prompt, build_source_prompt
 from src.visuals.providers import (
     GenerationRequest,
@@ -51,28 +59,6 @@ ROOT = Path(__file__).resolve().parents[1]
 PNG_BYTES = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
 )
-OFFICIAL_TIMINGS = (
-    ("S001", 0.0, 4.6519),
-    ("S002", 4.6519, 13.677),
-    ("S003", 13.677, 21.6281),
-    ("S004", 21.6281, 25.8857),
-    ("S005", 25.8857, 44.0295),
-    ("S006", 44.0295, 48.456208),
-    ("S007", 48.456208, 52.474499),
-    ("S008", 52.474499, 64.329374),
-    ("S009", 64.329374, 75.132832),
-    ("S010", 75.132832, 91.450041),
-    ("S011", 91.450041, 97.601582),
-    ("S012", 97.601582, 106.966573),
-    ("S013", 106.966573, 129.183673),
-    ("S014", 129.183673, 146.381273),
-    ("S015", 146.381273, 156.663573),
-    ("S016", 156.663573, 163.941673),
-    ("S017", 163.941673, 171.683573),
-    ("S018", 171.683573, 181.992773),
-)
-
-
 def _png_rgb_counts(path: Path) -> tuple[tuple[int, int], Counter[tuple[int, int, int]]]:
     data = path.read_bytes()
     if data[:8] != b"\x89PNG\r\n\x1a\n":
@@ -109,15 +95,20 @@ class CanonicalVisualScenesTest(unittest.TestCase):
         scenes = payload["scenes"]
 
         self.assertEqual(validate_visual_scenes(payload), [])
-        self.assertEqual(payload["episode_id"], "CO-001")
+        episode = resolve_active_episode(ROOT)
+        planned_rows = load_visual_script(episode.file("roteiro_visual.csv"))
+        planned_ids = [row["scene_id"] for row in planned_rows]
+        scene_ids = [scene["scene_id"] for scene in scenes]
+        self.assertEqual(payload["episode_id"], episode.episode_id)
         self.assertEqual(payload["character_lock"], "FIN_V1")
         self.assertEqual(payload["visual_profile"], "ILLUSTRATED_V1")
-        self.assertEqual(len(scenes), 18)
+        self.assertTrue(scene_ids)
+        self.assertEqual(len(scene_ids), len(set(scene_ids)))
+        self.assertTrue(set(scene_ids).issubset(planned_ids))
         self.assertEqual(
-            [scene["scene_id"] for scene in scenes],
-            [f"S{number:03d}" for number in range(1, 19)],
+            [planned_ids.index(scene_id) for scene_id in scene_ids],
+            sorted(planned_ids.index(scene_id) for scene_id in scene_ids),
         )
-        self.assertEqual(len({scene["scene_id"] for scene in scenes}), 18)
 
     def test_scenes_contain_only_variable_fields_and_valid_limits(self) -> None:
         for scene in load_visual_scenes()["scenes"]:
@@ -140,6 +131,42 @@ class CanonicalVisualScenesTest(unittest.TestCase):
                 "reference_profile",
             ):
                 self.assertNotIn(forbidden, scene)
+
+    def test_character_presence_is_explicit_and_schema_constrained(self) -> None:
+        payload = load_visual_scenes()
+        scenes = payload["scenes"]
+        expected = {
+            **{f"S{number:03d}": "FIN" for number in range(1, 10)},
+            "S010": "NONE",
+            **{f"S{number:03d}": "FIN" for number in range(11, 17)},
+            "S017": "NONE",
+            "S018": "NONE",
+        }
+        self.assertEqual(
+            {scene["scene_id"]: scene["character_presence"] for scene in scenes},
+            expected,
+        )
+
+        missing = deepcopy(payload)
+        del missing["scenes"][0]["character_presence"]
+        self.assertTrue(validate_visual_scenes(missing))
+
+        invalid_value = deepcopy(payload)
+        invalid_value["scenes"][0]["character_presence"] = "INFER"
+        self.assertTrue(validate_visual_scenes(invalid_value))
+
+        invalid_character = deepcopy(payload)
+        invalid_character["scenes"][0]["character_presence"] = "NONE"
+        self.assertTrue(validate_visual_scenes(invalid_character))
+
+        invalid_data = deepcopy(payload)
+        invalid_data["scenes"][-1]["character_presence"] = "FIN"
+        self.assertTrue(validate_visual_scenes(invalid_data))
+
+        allowed_object_and_environment = deepcopy(payload)
+        allowed_object_and_environment["scenes"][9]["character_presence"] = "FIN"
+        allowed_object_and_environment["scenes"][5]["character_presence"] = "NONE"
+        self.assertEqual(validate_visual_scenes(allowed_object_and_environment), [])
 
     def test_simple_data_scene_uses_structured_data_visual_only(self) -> None:
         payload = load_visual_scenes()
@@ -268,6 +295,41 @@ class PromptCompilationTest(unittest.TestCase):
         self.assertIn("NO CHARACTERS. NO PEOPLE. NO FIN.", prompt)
         self.assertNotIn("FIN must feel integrated", prompt)
         self.assertNotIn("FIN normally occupies", prompt)
+
+    def test_character_presence_comes_only_from_explicit_field(self) -> None:
+        no_character = deepcopy(build_generation_jobs(["S017"])[0])
+        no_character["action"] = "FIN appears only in this narrative debug sentence."
+        no_character_prompt = build_prompt(no_character)
+
+        self.assertIn("NO CHARACTERS. NO PEOPLE. NO FIN.", no_character_prompt)
+        self.assertNotIn("Canonical character lock: FIN_V1", no_character_prompt)
+
+        with_character = deepcopy(build_generation_jobs(["S004"])[0])
+        for field in (
+            "dominant_idea",
+            "situation",
+            "action",
+            "expression",
+            "environment",
+        ):
+            with_character[field] = str(with_character[field]).replace("FIN", "the subject")
+        with_character["props"] = [
+            str(prop).replace("FIN", "the subject") for prop in with_character["props"]
+        ]
+        with_character_prompt = build_prompt(with_character)
+
+        self.assertIn("Canonical character lock: FIN_V1", with_character_prompt)
+        self.assertIn("FIN normally occupies", with_character_prompt)
+        self.assertNotIn("NO CHARACTERS. NO PEOPLE. NO FIN.", with_character_prompt)
+
+    def test_visual_behavior_modules_have_no_scene_id_hardcoding(self) -> None:
+        prompt_source = inspect.getsource(prompt_builder)
+        routing_source = inspect.getsource(visual_routing)
+
+        self.assertNotIn("scene_id", prompt_source)
+        self.assertNotIn("scene_id", routing_source)
+        self.assertNotIn("S010", prompt_source)
+        self.assertNotIn("S015", prompt_source)
 
     def test_illustrated_style_lock_applies_to_every_scene_type(self) -> None:
         representative_scenes = {
@@ -410,6 +472,25 @@ class PromptCompilationTest(unittest.TestCase):
             self.assertIn(prop, prompt)
         self.assertIn("Treat the declared ACTION and EXPRESSION as mandatory instructions", prompt)
         self.assertIn("Include every declared prop and do not remove essential props", prompt)
+
+    def test_s015_intent_is_fully_declared_in_generic_scene_fields(self) -> None:
+        scene = build_generation_jobs(["S015"])[0]
+        prompt = build_prompt(scene)
+        declared_content = " ".join(
+            [scene["action"], scene["expression"], *scene["props"]]
+        ).lower()
+
+        for expected in (
+            "groceries",
+            "quiet relief",
+            "medicine box",
+            "bill envelope",
+        ):
+            self.assertIn(expected, declared_content)
+        self.assertIn(scene["action"], prompt)
+        self.assertIn(scene["expression"], prompt)
+        for prop in scene["props"]:
+            self.assertIn(prop, prompt)
 
     def test_model_autonomy_is_limited_to_appearance(self) -> None:
         prompt = build_prompt(build_generation_jobs(["S004"])[0])
@@ -622,7 +703,7 @@ class VisualGenerationPipelineTest(unittest.TestCase):
             self.assertEqual(scene["attempts"], 2)
             self.assertAlmostEqual(scene["cost_usd"], 0.1)
 
-    def test_routing_uses_scene_type_and_declared_character_not_scene_id(self) -> None:
+    def test_routing_uses_scene_type_and_character_presence_not_prose_or_scene_id(self) -> None:
         config = load_generation_config()
         character = deepcopy(build_generation_jobs(["S016"])[0])
         object_scene = deepcopy(build_generation_jobs(["S017"])[0])
@@ -645,12 +726,19 @@ class VisualGenerationPipelineTest(unittest.TestCase):
         self.assertFalse(data_route.api_required)
         self.assertEqual(data_route.cost_usd, 0.0)
 
-        object_scene["action"] = "FIN reviews the declared object."
+        object_scene["action"] = "FIN appears only in this narrative debug sentence."
+        object_with_fin_in_prose_route = resolve_visual_route(object_scene, config)
+        self.assertEqual(object_with_fin_in_prose_route.model, "openai/gpt-image-2")
+        self.assertEqual(object_with_fin_in_prose_route.primary_tier, "mid_fallback")
+
+        object_scene["action"] = "The declared object remains on the desk."
+        object_scene["character_presence"] = "FIN"
         object_with_fin_route = resolve_visual_route(object_scene, config)
         self.assertEqual(
             object_with_fin_route.model,
             "black-forest-labs/flux.2-klein-4b",
         )
+        self.assertEqual(object_with_fin_route.primary_tier, "cheap_draft")
 
     def test_simple_data_scene_renders_locally_with_zero_api_and_zero_cost(self) -> None:
         class ApiMustNotBeCalled:
@@ -876,25 +964,36 @@ class VisualGenerationPipelineTest(unittest.TestCase):
 
 
 class PreservedEditorialDataTest(unittest.TestCase):
-    def test_scene_map_preserves_official_timings(self) -> None:
-        scene_map = json.loads(
-            (ROOT / "episodios" / "CO-001" / "scene_map.json").read_text(encoding="utf-8")
-        )
-        actual = tuple(
-            (scene["scene_id"], float(scene["start"]), float(scene["end"]))
-            for scene in scene_map["scenes"]
-        )
+    def test_scene_map_is_a_valid_dynamic_episode_subset(self) -> None:
+        episode = resolve_active_episode(ROOT)
+        visual_rows = load_visual_script(episode.file("roteiro_visual.csv"))
+        planned_ids = [row["scene_id"] for row in visual_rows]
+        planned_types = {row["scene_id"]: row["scene_type"] for row in visual_rows}
+        scene_map = load_episode_json(episode.file("scene_map.json"))
 
-        self.assertEqual(actual, OFFICIAL_TIMINGS)
+        self.assertEqual(
+            validate_scene_map(
+                scene_map,
+                expected_episode_id=episode.episode_id,
+                planned_scene_ids=planned_ids,
+                planned_scene_types=planned_types,
+                production_stage=episode.production_stage,
+                expected_timing_quality=str(episode.project["timing_quality"]),
+            ),
+            [],
+        )
         self.assertEqual(scene_map["timing_quality"], "WORD_BOUNDARY_REAL")
 
-    def test_visual_script_remains_48_static_scenes_without_text(self) -> None:
-        with (ROOT / "episodios" / "CO-001" / "roteiro_visual.csv").open(
-            encoding="utf-8", newline=""
-        ) as handle:
-            rows = list(csv.DictReader(handle))
+    def test_visual_script_is_a_valid_dynamic_static_sequence_without_text(self) -> None:
+        episode = resolve_active_episode(ROOT)
+        rows = load_visual_script(episode.file("roteiro_visual.csv"))
 
-        self.assertEqual([row["scene_id"] for row in rows], [f"S{n:03d}" for n in range(1, 49)])
+        self.assertEqual(validate_visual_script(rows), [])
+        self.assertTrue(rows)
+        self.assertEqual(
+            len([row["scene_id"] for row in rows]),
+            len({row["scene_id"] for row in rows}),
+        )
         self.assertTrue(all(row["format"] == "image" for row in rows))
         self.assertTrue(all(not row["text_on_screen"].strip() for row in rows))
 

@@ -7,12 +7,21 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+from src.episodes import (
+    PRODUCTION_STAGES,
+    load_json as load_episode_json,
+    load_visual_script,
+    resolve_active_episode,
+    validate_ordered_subset,
+    validate_visual_script,
+)
+
 from .data_visual import validate_data_visual
-from .prompt_builder import SCENE_TYPES, TEXT_POLICY_MODES
+from .prompt_builder import CHARACTER_PRESENCES, SCENE_TYPES, TEXT_POLICY_MODES
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_VISUAL_SCENES = ROOT / "episodios" / "CO-001" / "visual_scenes.json"
+DEFAULT_VISUAL_SCENES = resolve_active_episode(ROOT).file("visual_scenes.json")
 DEFAULT_CHARACTER_LOCK = ROOT / "config" / "character_fin.json"
 DEFAULT_GENERATION_CONFIG = ROOT / "config" / "visual_generation.json"
 DEFAULT_REFERENCE_PROFILE = ROOT / "config" / "visual_reference_profile.json"
@@ -22,6 +31,7 @@ REQUIRED_SCENE_FIELDS = {
     "scene_id",
     "beat_id",
     "scene_type",
+    "character_presence",
     "dominant_idea",
     "situation",
     "action",
@@ -75,21 +85,58 @@ def load_reference_profile(path: Path = DEFAULT_REFERENCE_PROFILE) -> dict[str, 
 
 def load_visual_scenes(path: Path = DEFAULT_VISUAL_SCENES) -> dict[str, Any]:
     payload = _load_json(path)
-    errors = validate_visual_scenes(payload)
+    context_errors: list[str] = []
+    expected_episode_id: str | None = None
+    production_stage = "visual_qualification"
+    planned_scene_ids: list[str] | None = None
+    planned_scene_types: dict[str, str] | None = None
+    metadata_path = path.parent / "episodio.json"
+    if metadata_path.is_file():
+        metadata = load_episode_json(metadata_path)
+        expected_episode_id = str(metadata.get("episodio_id", "")).strip() or None
+        production_stage = str(metadata.get("production_stage", "")).strip()
+        if production_stage not in PRODUCTION_STAGES:
+            context_errors.append("unsupported episode production_stage")
+    visual_script_path = path.parent / "roteiro_visual.csv"
+    if visual_script_path.is_file():
+        rows = load_visual_script(visual_script_path)
+        context_errors.extend(validate_visual_script(rows))
+        planned_scene_ids = [str(row.get("scene_id", "")).strip() for row in rows]
+        planned_scene_types = {
+            str(row.get("scene_id", "")).strip(): str(row.get("scene_type", "")).strip()
+            for row in rows
+        }
+    errors = context_errors + validate_visual_scenes(
+        payload,
+        expected_episode_id=expected_episode_id,
+        planned_scene_ids=planned_scene_ids,
+        planned_scene_types=planned_scene_types,
+        production_stage=production_stage,
+    )
     if errors:
         raise ValueError("invalid visual_scenes.json: " + "; ".join(errors))
     return payload
 
 
-def validate_visual_scenes(payload: Mapping[str, Any]) -> list[str]:
+def validate_visual_scenes(
+    payload: Mapping[str, Any],
+    *,
+    expected_episode_id: str | None = None,
+    planned_scene_ids: Sequence[str] | None = None,
+    planned_scene_types: Mapping[str, str] | None = None,
+    production_stage: str = "visual_qualification",
+) -> list[str]:
     errors: list[str] = []
     root_fields = set(payload)
     if root_fields != REQUIRED_ROOT_FIELDS:
         errors.append(
             "root fields must be exactly " + ", ".join(sorted(REQUIRED_ROOT_FIELDS))
         )
-    if payload.get("episode_id") != "CO-001":
-        errors.append("episode_id must be CO-001")
+    episode_id = payload.get("episode_id")
+    if not isinstance(episode_id, str) or not episode_id.strip():
+        errors.append("episode_id must be a non-empty string")
+    elif expected_episode_id is not None and episode_id != expected_episode_id:
+        errors.append("episode_id must match the active episode")
     if payload.get("character_lock") != "FIN_V1":
         errors.append("character_lock must be FIN_V1")
     if payload.get("visual_profile") != "ILLUSTRATED_V1":
@@ -116,6 +163,19 @@ def validate_visual_scenes(payload: Mapping[str, Any]) -> list[str]:
         scene_type = scene.get("scene_type")
         if scene_type not in SCENE_TYPES:
             errors.append(f"{label}: unsupported scene_type")
+        elif (
+            planned_scene_types is not None
+            and scene_id in planned_scene_types
+            and scene_type != planned_scene_types[scene_id]
+        ):
+            errors.append(f"{label}: scene_type differs from roteiro_visual")
+        character_presence = scene.get("character_presence")
+        if character_presence not in CHARACTER_PRESENCES:
+            errors.append(f"{label}: unsupported character_presence")
+        if scene_type == "CHARACTER_SCENE" and character_presence != "FIN":
+            errors.append(f"{label}: CHARACTER_SCENE requires character_presence FIN")
+        if scene_type == "SIMPLE_DATA_SCENE" and character_presence != "NONE":
+            errors.append(f"{label}: SIMPLE_DATA_SCENE requires character_presence NONE")
         data_visual = scene.get("data_visual")
         if scene_type == "SIMPLE_DATA_SCENE":
             if "data_visual" not in scene:
@@ -181,9 +241,21 @@ def validate_visual_scenes(payload: Mapping[str, Any]) -> list[str]:
                 elif "\n" in value or "\r" in value:
                     errors.append(f"{item_label}: {field} must be single-line")
 
-    expected_ids = [f"S{number:03d}" for number in range(1, 19)]
-    if scene_ids != expected_ids:
-        errors.append("scenes must contain unique S001-S018 in order")
+    if any(not scene_id for scene_id in scene_ids):
+        errors.append("scene_id must not be empty")
+    if len(scene_ids) != len(set(scene_ids)):
+        errors.append("scene_ids must be unique")
+    if planned_scene_ids is not None:
+        errors.extend(
+            validate_ordered_subset(
+                scene_ids,
+                planned_scene_ids,
+                label="visual_scenes",
+                production_stage=production_stage,
+            )
+        )
+    elif production_stage not in PRODUCTION_STAGES:
+        errors.append("unsupported production_stage")
     return errors
 
 

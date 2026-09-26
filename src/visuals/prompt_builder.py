@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import re
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Mapping
@@ -20,6 +19,7 @@ SCENE_TYPES = (
     "SIMPLE_DATA_SCENE",
 )
 TEXT_POLICY_MODES = ("NONE", "OVERLAY")
+CHARACTER_PRESENCES = ("FIN", "NONE")
 
 SECTION_ORDER = (
     "SCENE TYPE",
@@ -152,24 +152,13 @@ def _essential_character_description(character_lock: Mapping[str, Any]) -> str:
     return "; ".join(values)
 
 
-def _has_declared_fin(scene: Mapping[str, Any]) -> bool:
-    """Resolve FIN presence only from narrative values declared in the scene JSON."""
+def _character_presence(scene: Mapping[str, Any]) -> str:
+    """Resolve presenca de personagem somente pelo campo canonico do JSON."""
 
-    declared_values: list[str] = []
-    for field in (
-        "dominant_idea",
-        "situation",
-        "action",
-        "expression",
-        "environment",
-        "props",
-    ):
-        value = scene[field]
-        if isinstance(value, list):
-            declared_values.extend(str(item) for item in value)
-        else:
-            declared_values.append(str(value))
-    return any(re.search(r"\bFIN\b", value) for value in declared_values)
+    presence = str(scene["character_presence"])
+    if presence not in CHARACTER_PRESENCES:
+        raise ValueError(f"unsupported character presence: {presence}")
+    return presence
 
 
 def _character_consistency(
@@ -181,7 +170,7 @@ def _character_consistency(
     references = ", ".join(character_lock["canonical_references"])
     if not has_fin:
         return (
-            f"{NO_CHARACTER_RULE} Character presence is not declared in the scene JSON. Preserve "
+            f"{NO_CHARACTER_RULE} character_presence is NONE in the scene JSON. Preserve "
             "the official illustrated visual universe without importing character identity or anatomy."
         )
     return (
@@ -191,14 +180,14 @@ def _character_consistency(
     )
 
 
-def _framing(scene: Mapping[str, Any]) -> str:
+def _framing(scene: Mapping[str, Any], has_fin: bool) -> str:
     framing = scene["framing"]
     text = (
         f"{framing['shot']} shot, subject {framing['subject_position']}, "
         f"camera angle {framing['camera_angle']}"
     )
     occupancy = framing.get("fin_occupancy")
-    if occupancy is not None:
+    if has_fin and occupancy is not None:
         text += f", FIN occupies about {round(float(occupancy) * 100)}% of the frame"
     return text + ". Horizontal 16:9, 1920x1080."
 
@@ -263,7 +252,7 @@ def _visual_reference(profile_id: str, has_fin: bool) -> str:
     )
 
 
-def _scene_type_specific_rules(scene_type: str) -> dict[str, str]:
+def _scene_type_specific_rules(scene_type: str, has_fin: bool) -> dict[str, str]:
     if scene_type == "CHARACTER_SCENE":
         return {
             "BEHAVIOR RULE": f"{FIN_PRESENCE_RULESET} {CHARACTER_BEHAVIOR_RULE}",
@@ -274,7 +263,7 @@ def _scene_type_specific_rules(scene_type: str) -> dict[str, str]:
             "CAMERA SIMPLICITY RULE": CAMERA_SIMPLICITY_RULE,
         }
     if scene_type == "OBJECT_SCENE":
-        return {
+        rules = {
             "BEHAVIOR RULE": (
                 f"{OBJECT_SCENE_GUARD} Static composition is allowed. Preserve the declared object "
                 "arrangement and do not invent movement."
@@ -286,7 +275,7 @@ def _scene_type_specific_rules(scene_type: str) -> dict[str, str]:
             ),
             "BACKGROUND SUBORDINATION RULE": BACKGROUND_SUBORDINATION_RULE,
         }
-    if scene_type == "SIMPLE_DATA_SCENE":
+    elif scene_type == "SIMPLE_DATA_SCENE":
         return {
             "BEHAVIOR RULE": DATA_SCENE_GUARD,
             "COMPOSITION PRIORITY": (
@@ -294,16 +283,25 @@ def _scene_type_specific_rules(scene_type: str) -> dict[str, str]:
                 "unchanged. The model may decide only fine point placement and non-narrative rendering details."
             ),
         }
-    return {
-        "BEHAVIOR RULE": (
-            "ENVIRONMENT_SCENE GUARD. Keep the declared environment dominant and render only the "
-            "subjects and activity explicitly declared by the scene JSON."
-        ),
-        "COMPOSITION PRIORITY": (
-            "Keep the declared dominant idea, framing, environment, declared subjects, and props unchanged. "
-            "The model may decide only fine spatial placement, perspective, lighting, and surface rendering."
-        ),
-    }
+    else:
+        rules = {
+            "BEHAVIOR RULE": (
+                "ENVIRONMENT_SCENE GUARD. Keep the declared environment dominant and render only the "
+                "subjects and activity explicitly declared by the scene JSON."
+            ),
+            "COMPOSITION PRIORITY": (
+                "Keep the declared dominant idea, framing, environment, declared subjects, and props unchanged. "
+                "The model may decide only fine spatial placement, perspective, lighting, and surface rendering."
+            ),
+        }
+    if has_fin:
+        rules["BEHAVIOR RULE"] = (
+            f"{FIN_PRESENCE_RULESET} {CHARACTER_BEHAVIOR_RULE} {rules['BEHAVIOR RULE']}"
+        )
+        rules["CHARACTER EMPHASIS RULE"] = CHARACTER_EMPHASIS_RULE
+        rules["ANTI-STAGING RULE"] = ANTI_STAGING_RULE
+        rules["CAMERA SIMPLICITY RULE"] = CAMERA_SIMPLICITY_RULE
+    return rules
 
 
 def _negative_rules(
@@ -348,7 +346,12 @@ def _build_sections(scene: Mapping[str, Any]) -> dict[str, str]:
     _text_policy_mode(scene)
     if scene_type not in SCENE_TYPES:
         raise ValueError(f"unsupported scene type: {scene_type}")
-    has_fin = _has_declared_fin(scene)
+    character_presence = _character_presence(scene)
+    if scene_type == "CHARACTER_SCENE" and character_presence != "FIN":
+        raise ValueError("CHARACTER_SCENE requires character_presence FIN")
+    if scene_type == "SIMPLE_DATA_SCENE" and character_presence != "NONE":
+        raise ValueError("SIMPLE_DATA_SCENE requires character_presence NONE")
+    has_fin = character_presence == "FIN"
     profile_id = str(profile["profile_id"])
     sections: dict[str, Any] = {
         "SCENE TYPE": scene_type,
@@ -357,7 +360,7 @@ def _build_sections(scene: Mapping[str, Any]) -> dict[str, str]:
         "EXPRESSION": scene["expression"],
         "ENVIRONMENT": scene["environment"],
         "PROPS": ", ".join(scene["props"]) if scene["props"] else "No declared narrative props.",
-        "FRAMING": _framing(scene),
+        "FRAMING": _framing(scene, has_fin),
         "SUBJECT COUNT": SUBJECT_COUNT_ONE_FIN if has_fin else NO_CHARACTER_RULE,
         "CHARACTER CONSISTENCY": _character_consistency(scene, character_lock, has_fin),
         "LIGHTING": scene["lighting"],
@@ -370,35 +373,7 @@ def _build_sections(scene: Mapping[str, Any]) -> dict[str, str]:
         "TEXT POLICY": _text_policy(scene),
         "NEGATIVE RULES": _negative_rules(profile, scene_type, has_fin),
     }
-    sections.update(_scene_type_specific_rules(scene_type))
-    scene_id = str(scene["scene_id"])
-    if scene_id == "S010":
-        sections["ACTION"] = (
-            f"{sections['ACTION']} This is strictly an OBJECT_SCENE with no FIN and no people. "
-            "Follow the OVERLAY TEXT POLICY exactly: keep the declared target areas blank and do not "
-            "render the declared text content."
-        )
-        sections["READABILITY RULE"] = (
-            f"{sections['READABILITY RULE']} Do not add any visible text; all declared text will be applied later as a deterministic overlay."
-        )
-        sections["NEGATIVE RULES"] = (
-            f"{sections['NEGATIVE RULES']} No undeclared text, labels, numbers, letters, digits, pseudo-text, or FIN/person anywhere."
-        )
-    elif scene_id == "S015":
-        sections["ACTION"] = (
-            f"{sections['ACTION']} FIN must be actively putting away basic groceries, visibly handling and storing "
-            "the groceries rather than merely standing still."
-        )
-        sections["EXPRESSION"] = (
-            f"{sections['EXPRESSION']} Show quiet relief and material stability; do not portray FIN as worried or anxious."
-        )
-        sections["PROPS"] = (
-            f"{sections['PROPS']} The small medicine box and closed bill envelope must both be clearly visible."
-        )
-        sections["NEGATIVE RULES"] = (
-            f"{sections['NEGATIVE RULES']} Do not portray FIN as worried, anxious, or merely standing still; "
-            "the grocery-putting-away action must be unmistakable."
-        )
+    sections.update(_scene_type_specific_rules(scene_type, has_fin))
     return {
         name: _normalize(sections[name])
         for name in SECTION_ORDER

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from typing import Any, Mapping, Sequence
 
@@ -23,24 +22,13 @@ class VisualRoute:
     cost_usd: float
 
 
-def scene_declares_fin(scene: Mapping[str, Any]) -> bool:
-    """Determina presenca de FIN somente pelos campos narrativos do JSON."""
+def _character_presence(scene: Mapping[str, Any]) -> str:
+    """Resolve presenca de personagem somente pelo campo canonico do JSON."""
 
-    values: list[str] = []
-    for field in (
-        "dominant_idea",
-        "situation",
-        "action",
-        "expression",
-        "environment",
-        "props",
-    ):
-        value = scene[field]
-        if isinstance(value, list):
-            values.extend(str(item) for item in value)
-        else:
-            values.append(str(value))
-    return any(re.search(r"\bFIN\b", value) for value in values)
+    presence = str(scene["character_presence"])
+    if presence not in {"FIN", "NONE"}:
+        raise ValueError(f"unsupported character presence: {presence}")
+    return presence
 
 
 def resolve_visual_route(
@@ -54,8 +42,13 @@ def resolve_visual_route(
         raise ValueError("visual routing source must be SCENE_TYPE")
     routes = routing["routes"]
     scene_type = str(scene["scene_type"])
+    character_presence = _character_presence(scene)
+    if scene_type == "CHARACTER_SCENE" and character_presence != "FIN":
+        raise ValueError("CHARACTER_SCENE requires character_presence FIN")
+    if scene_type == "SIMPLE_DATA_SCENE" and character_presence != "NONE":
+        raise ValueError("SIMPLE_DATA_SCENE requires character_presence NONE")
     definition = routes[scene_type]
-    if scene_type == "OBJECT_SCENE" and scene_declares_fin(scene):
+    if scene_type == "OBJECT_SCENE" and character_presence == "FIN":
         definition = routes[str(definition["with_character_route"])]
 
     renderer = str(definition["renderer"])

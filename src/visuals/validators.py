@@ -182,7 +182,20 @@ def validate_reference_profile(profile: Mapping[str, Any], root: Path) -> list[s
     if profile.get("fin_lock") != "FIN_V1":
         errors.append("visual reference profile must lock FIN_V1")
     references = list(profile.get("required_references", []))
-    references.extend(profile.get("scene_reference_images", {}).values())
+    scene_references = profile.get("scene_reference_images", {})
+    if not isinstance(scene_references, Mapping):
+        errors.append("scene_reference_images must be an object")
+        scene_references = {}
+    references.extend(scene_references.values())
+    compatibility = profile.get("scene_reference_character_presence", {})
+    if not isinstance(compatibility, Mapping):
+        errors.append("scene reference character presence must be an object")
+    else:
+        unknown_compatibility = set(compatibility) - set(scene_references)
+        if unknown_compatibility:
+            errors.append("scene reference compatibility has no configured image")
+        if any(value not in {"FIN", "NONE"} for value in compatibility.values()):
+            errors.append("scene reference character presence must be FIN or NONE")
     for reference in references:
         if not (root / reference).is_file():
             errors.append(f"missing visual reference: {reference}")

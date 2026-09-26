@@ -15,6 +15,13 @@ from xml.sax.saxutils import escape
 from . import ProviderError
 
 
+BEATS_METADATA: dict[str, Any] = {
+    "scope": "pilot_beats",
+    "coverage": "partial",
+    "official_narration": False,
+}
+
+
 BEATS_DATA: list[dict[str, Any]] = [
     {
         "beat_id": "B001",

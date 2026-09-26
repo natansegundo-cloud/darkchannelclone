@@ -8,14 +8,17 @@ import re
 from pathlib import Path
 from typing import Any
 
+from src.episodes import resolve_active_episode
+
 
 ROOT = Path(__file__).resolve().parents[2]
+ACTIVE_EPISODE = resolve_active_episode(ROOT)
 NARRATORS_PATH = ROOT / "config" / "narrators.json"
 LOCAL_VOICE_PATH = ROOT / "config" / "voz_local.json"
 MOTION_CONTRACT_PATH = ROOT / "config" / "motion_contract.json"
 DEFAULT_ENV_PATH = ROOT / "scripts" / ".env"
-DEFAULT_INPUT = ROOT / "episodios" / "CO-001" / "roteiro_narracao.md"
-DEFAULT_OUTPUT = ROOT / "output" / "audio" / "CO-001"
+DEFAULT_INPUT = ACTIVE_EPISODE.file("roteiro_narracao.md")
+DEFAULT_OUTPUT = ROOT / "output" / "audio" / ACTIVE_EPISODE.episode_id
 
 
 class ConfigError(RuntimeError):

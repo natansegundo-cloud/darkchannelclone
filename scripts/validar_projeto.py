@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import csv
 import json
 import re
 import subprocess
@@ -12,6 +11,24 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from src.episodes import (  # noqa: E402
+    load_json as load_path_json,
+    load_visual_script,
+    resolve_active_episode,
+    validate_scene_map,
+    validate_visual_script,
+)
+from src.narration.providers.pacing import BEATS_DATA, BEATS_METADATA  # noqa: E402
+from src.narration.validation import (  # noqa: E402
+    validate_delivery_contract,
+    validate_pilot_narration,
+)
+from src.visuals.engine import validate_visual_scenes  # noqa: E402
+
+
 REQUIRED = (
     "AGENTS.md",
     "README.md",
@@ -31,11 +48,9 @@ REQUIRED = (
     "assets/visual_references/S004.png",
     "assets/visual_references/S007.png",
     "assets/visual_references/S009.png",
-    "episodios/CO-001/roteiro_narracao.md",
-    "episodios/CO-001/roteiro_visual.csv",
-    "episodios/CO-001/scene_map.json",
-    "episodios/CO-001/visual_scenes.json",
+    "src/episodes.py",
     "src/narration/engine.py",
+    "src/narration/validation.py",
     "src/visuals/engine.py",
     "src/visuals/prompt_builder.py",
     "src/visuals/providers.py",
@@ -46,14 +61,6 @@ REQUIRED = (
     "scripts/gerar_narracao.py",
 )
 BANNED_SUFFIX = re.compile(r"(?:_v2|_v3|_final|_novo|_refined|_candidate)(?:\.|$)", re.IGNORECASE)
-VISUAL_SCENE_TYPES = {
-    "CHARACTER_SCENE",
-    "OBJECT_SCENE",
-    "ENVIRONMENT_SCENE",
-    "SIMPLE_DATA_SCENE",
-}
-
-
 def load_json(relative: str) -> dict:
     return json.loads((ROOT / relative).read_text(encoding="utf-8-sig"))
 
@@ -71,7 +78,18 @@ def validate() -> list[str]:
         if not (ROOT / relative).is_file():
             errors.append(f"arquivo obrigatório ausente: {relative}")
 
-    project = load_json("config/project.json")
+    episode = resolve_active_episode(ROOT)
+    for name in (
+        "episodio.json",
+        "roteiro_narracao.md",
+        "roteiro_visual.csv",
+        "scene_map.json",
+        "visual_scenes.json",
+    ):
+        if not episode.file(name).is_file():
+            errors.append(f"arquivo obrigatório ausente: {episode.file(name).relative_to(ROOT)}")
+
+    project = dict(episode.project)
     narrators = load_json("config/narrators.json")
     motion = load_json("config/motion_contract.json")
     fin = load_json("config/character_fin.json")
@@ -86,6 +104,15 @@ def validate() -> list[str]:
         errors.append("narrador padrão não usa azure_sdk")
     if motion["voice_pacing"].get("provider") != "azure_sdk":
         errors.append("contrato de pacing não usa azure_sdk")
+    errors.extend(validate_delivery_contract(narrators, motion))
+    errors.extend(
+        validate_pilot_narration(
+            BEATS_DATA,
+            BEATS_METADATA,
+            motion,
+            production_stage=episode.production_stage,
+        )
+    )
     if fin.get("character_lock_version") != "FIN_V1":
         errors.append("character_lock_version deve ser FIN_V1")
     canonical_references = fin.get("canonical_references", [])
@@ -204,7 +231,7 @@ def validate() -> list[str]:
     if any(not (ROOT / reference).is_file() for reference in profile_references):
         errors.append("perfil visual aponta para referência ausente")
 
-    timing_dir = ROOT / "episodios" / "CO-001" / "timing"
+    timing_dir = episode.file("timing")
     for path in sorted(timing_dir.glob("b*.json")):
         timing = json.loads(path.read_text(encoding="utf-8-sig"))
         if timing.get("provider") != "azure_speech_sdk":
@@ -214,59 +241,38 @@ def validate() -> list[str]:
         if any(not beat.get("synthesis_id") for beat in timing.get("beats", [])):
             errors.append(f"synthesis_id ausente em {path.name}")
 
-    scene_map = load_json("episodios/CO-001/scene_map.json")
-    scenes = scene_map.get("scenes", [])
-    if scene_map.get("timing_quality") != "WORD_BOUNDARY_REAL" or len(scenes) != 18:
-        errors.append("scene_map deve conter S001-S018 com WORD_BOUNDARY_REAL")
-    if any(float(scene["end"]) <= float(scene["start"]) for scene in scenes):
-        errors.append("scene_map contém duração inválida")
-    if scene_map.get("visual_direction") != "FIN_AUDIENCE_PROXY_SITUATIONAL":
-        errors.append("scene_map não usa a direção visual situacional oficial")
-    if any(scene.get("scene_type") not in VISUAL_SCENE_TYPES for scene in scenes):
-        errors.append("scene_map contém scene_type visual inválido")
-    if any(not scene.get("visual_intent") or not scene.get("setting") for scene in scenes):
-        errors.append("scene_map contém cena sem intenção visual ou ambiente")
-
-    visual_script_path = ROOT / "episodios" / "CO-001" / "roteiro_visual.csv"
-    with visual_script_path.open(encoding="utf-8-sig", newline="") as handle:
-        visual_rows = list(csv.DictReader(handle))
-    expected_scene_ids = [f"S{number:03d}" for number in range(1, 49)]
-    if [row.get("scene_id") for row in visual_rows] != expected_scene_ids:
-        errors.append("roteiro_visual deve conter S001-S048 em ordem")
-    if any(row.get("scene_type") not in VISUAL_SCENE_TYPES for row in visual_rows):
-        errors.append("roteiro_visual contém scene_type inválido")
-    if any(row.get("format") != "image" for row in visual_rows):
-        errors.append("roteiro_visual situacional deve preparar somente imagens estáticas")
+    visual_rows = load_visual_script(episode.file("roteiro_visual.csv"))
+    errors.extend(validate_visual_script(visual_rows))
+    planned_scene_ids = [str(row.get("scene_id", "")).strip() for row in visual_rows]
+    planned_scene_types = {
+        str(row.get("scene_id", "")).strip(): str(row.get("scene_type", "")).strip()
+        for row in visual_rows
+    }
     if any((row.get("text_on_screen") or "").strip() for row in visual_rows):
         errors.append("roteiro_visual não deve embutir texto nas imagens")
 
-    visual_scenes = load_json("episodios/CO-001/visual_scenes.json")
-    if set(visual_scenes) != {"episode_id", "character_lock", "visual_profile", "scenes"}:
-        errors.append("visual_scenes deve conter somente os campos raiz canônicos")
-    if visual_scenes.get("episode_id") != "CO-001":
-        errors.append("visual_scenes deve pertencer ao episódio CO-001")
-    if visual_scenes.get("character_lock") != "FIN_V1":
-        errors.append("visual_scenes deve resolver FIN_V1")
-    if visual_scenes.get("visual_profile") != "ILLUSTRATED_V1":
-        errors.append("visual_scenes deve resolver ILLUSTRATED_V1")
-    canonical_visual_scenes = visual_scenes.get("scenes", [])
-    if [scene.get("scene_id") for scene in canonical_visual_scenes] != [
-        f"S{number:03d}" for number in range(1, 19)
-    ]:
-        errors.append("visual_scenes deve conter S001-S018 únicos e em ordem")
-    if any(len(scene.get("props", [])) > 3 for scene in canonical_visual_scenes):
-        errors.append("visual_scenes contém cena com mais de três props")
-    if any("text_policy" not in scene for scene in canonical_visual_scenes):
-        errors.append("todas as cenas devem declarar text_policy explicitamente")
-    text_modes = {
-        scene.get("text_policy", {}).get("mode") for scene in canonical_visual_scenes
-    }
-    if not text_modes.issubset({"NONE", "OVERLAY"}):
-        errors.append("text_policy deve usar somente NONE ou OVERLAY")
-    for scene in canonical_visual_scenes:
-        occupancy = scene.get("framing", {}).get("fin_occupancy")
-        if occupancy is not None and not 0 <= float(occupancy) <= 1:
-            errors.append(f"fin_occupancy inválido em {scene.get('scene_id')}")
+    scene_map = load_path_json(episode.file("scene_map.json"))
+    errors.extend(
+        validate_scene_map(
+            scene_map,
+            expected_episode_id=episode.episode_id,
+            planned_scene_ids=planned_scene_ids,
+            planned_scene_types=planned_scene_types,
+            production_stage=episode.production_stage,
+            expected_timing_quality=str(project.get("timing_quality", "")) or None,
+        )
+    )
+
+    visual_scenes = load_path_json(episode.file("visual_scenes.json"))
+    errors.extend(
+        validate_visual_scenes(
+            visual_scenes,
+            expected_episode_id=episode.episode_id,
+            planned_scene_ids=planned_scene_ids,
+            planned_scene_types=planned_scene_types,
+            production_stage=episode.production_stage,
+        )
+    )
 
     tracked = tracked_files()
     secrets = [path for path in tracked if path == ".env" or path.endswith("/.env")]

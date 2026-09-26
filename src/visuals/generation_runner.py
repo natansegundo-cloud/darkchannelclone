@@ -37,6 +37,7 @@ from .engine import (
 )
 from .prompt_builder import build_prompt
 from .providers import GenerationRequest, ProviderRegistry, UNKNOWN_BILLED_TIMEOUT
+from .references import resolve_scene_references
 from .routing import (
     DETERMINISTIC_LOCAL_RENDERER,
     resolve_visual_route,
@@ -118,18 +119,10 @@ def _enabled_tiers(
             yield tier_name, tier
 
 
-def _references(profile: Mapping[str, Any], scene_id: str) -> list[str]:
-    references = list(profile["required_references"])
-    scene_reference = profile.get("scene_reference_images", {}).get(scene_id)
-    if scene_reference:
-        references.append(scene_reference)
-    return references
-
-
 def _scene_record(
     *,
     scene_id: str,
-    profile: Mapping[str, Any],
+    references_used: Sequence[str],
     prompt_hash: str,
 ) -> dict[str, Any]:
     return {
@@ -141,7 +134,7 @@ def _scene_record(
         "model": None,
         "attempts": 0,
         "cost_usd": 0.0,
-        "references_used": _references(profile, scene_id),
+        "references_used": list(references_used),
         "output_path": None,
         "draft_path": None,
         "final_path": None,
@@ -180,7 +173,7 @@ def _write_summary(path: Path, manifest: Mapping[str, Any]) -> None:
     lines = [
         "# Visual generation summary",
         "",
-        "- Canonical source: episodios/CO-001/visual_scenes.json",
+        f"- Canonical source: {manifest['canonical_source']}",
         "- Prompt compilation: in memory",
         f"- Visual profile: {manifest['visual_profile']}",
         f"- FIN lock: {manifest['fin_lock']}",
@@ -364,6 +357,11 @@ def _run_generation_unlocked(
             enable_premium=enable_premium,
             allowed_tiers=allowed_tiers,
         )
+        references = (
+            resolve_scene_references(scene, effective_profile)
+            if route.api_required
+            else []
+        )
         compiled_prompt: str | None = None
         prompt_errors: list[str] = []
         if route.api_required:
@@ -372,6 +370,7 @@ def _run_generation_unlocked(
             hash_payload: Mapping[str, Any] = {
                 "renderer": route.renderer,
                 "prompt": compiled_prompt,
+                "references": references,
                 "tiers": [
                     {
                         "name": tier_name,
@@ -396,11 +395,9 @@ def _run_generation_unlocked(
         prompt_hash = hashlib.sha256(hash_source.encode("utf-8")).hexdigest()
         record = _scene_record(
             scene_id=scene_id,
-            profile=effective_profile,
+            references_used=references,
             prompt_hash=prompt_hash,
         )
-        if route.renderer == DETERMINISTIC_LOCAL_RENDERER:
-            record["references_used"] = []
         previous_scene_record = all_previous_manifest_records.get(scene_id)
         old_record = previous.get(scene_id) or previous_manifest_records.get(scene_id)
         previous_attempts = (
@@ -849,6 +846,8 @@ def upgrade_scenes(
             scene_id = str(record["scene_id"])
             scene = build_generation_jobs([scene_id])[0]
             prompt = build_prompt(scene)
+            references = resolve_scene_references(scene, profile_data)
+            record["references_used"] = references
             estimate = float(mid_tier["estimated_cost_per_image"])
             if not budget.can_afford(estimate):
                 record["status"] = "skipped_budget"
@@ -872,7 +871,7 @@ def upgrade_scenes(
                 prompt=prompt,
                 visual_profile=str(profile_data["profile_id"]),
                 fin_lock=str(profile_data["fin_lock"]),
-                reference_images=tuple(profile_data["required_references"]),
+                reference_images=tuple(references),
                 provider=str(mid_tier["provider"]),
                 model=str(mid_tier["model"]),
                 tier="mid_fallback",

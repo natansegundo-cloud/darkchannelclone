@@ -57,9 +57,11 @@ O builder compila esses campos em uma única linha contínua no formato `CAMPO: 
 
 `VISUAL REFERENCE` aplica `ILLUSTRATED_V1` como linguagem qualitativa canônica. As referências de S004, S007 e S009 definem naturalidade, economia visual, ação dominante e integração do FIN; não congelam enquadramento, posição ou geometria para outras cenas.
 
+As imagens do character bible são referências de personagem e só entram no request quando `character_presence` é `FIN`. Cenas `NONE` não recebem `fin_turnaround.png` nem `fin_poses.png`. Geração normal, upgrade e benchmark usam a mesma resolução centralizada; uma referência específica em cena `NONE` exige compatibilidade `NONE` explícita no perfil.
+
 ## Política de texto visual
 
-`episodios/CO-001/visual_scenes.json` é a fonte de verdade para qualquer texto ou número visível. O gerador nunca decide sozinho que uma cena precisa de texto: toda ocorrência deve ser coberta por `text_policy`.
+O `visual_scenes.json` do episódio ativo é a fonte de verdade para qualquer texto ou número visível. O gerador nunca decide sozinho que uma cena precisa de texto: toda ocorrência deve ser coberta por `text_policy`.
 
 `text_policy` usa exatamente um destes modos:
 
@@ -142,5 +144,7 @@ Não usar como linguagem dominante:
 ## Motion
 
 Motion é posterior e discreto: slow zoom in/out, pan leve, hold, crossfade, parallax sutil ou shake curto motivado pela ação. A animação apoia o quadro; não corrige uma composição fraca.
+
+O render aplica somente presets enumerados no `scene_map.json`, sem inferir movimento a partir da imagem ou da prosa. A timeline é montada dinamicamente e precisa ser contínua. Assets pendentes, reprovados, ausentes, motion desconhecido ou duração incompatível bloqueiam a saída. Como o compositor de texto ainda não foi implementado, qualquer `text_policy.mode=OVERLAY` também bloqueia o render final em vez de omitir o texto silenciosamente.
 
 Esta direção substitui oficialmente a abordagem anterior baseada em metáforas gráficas e composições abstratas.

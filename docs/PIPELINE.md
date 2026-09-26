@@ -14,11 +14,13 @@ ROTEIRO OFICIAL
 
 ## Narração e timing
 
-O roteiro oficial permanece em `episodios/CO-001/roteiro_narracao.md`. `python main.py narracao` sintetiza cada beat pelo Azure Speech SDK, mantendo áudio e eventos `WordBoundary` ligados pelo mesmo `synthesis_id`. Os timings oficiais alimentam `episodios/CO-001/scene_map.json` e não são recalculados pela camada visual.
+O episódio ativo é resolvido uma única vez por `config/project.json:active_episode`. Seus arquivos ficam em `episodios/<active_episode>/`, e `episodio.json:production_stage` distingue `visual_qualification` de `production`. Nesta etapa, B001–B013 são metadata `pilot_beats`, com cobertura parcial, e não são rotulados como roteiro completo. A narração oficial ainda não foi implementada nem é exigida. Quando executado explicitamente, o piloto usa Azure Speech SDK e mantém áudio e eventos `WordBoundary` ligados pelo mesmo `synthesis_id`; timings reais existentes não são recalculados pela camada visual.
+
+`config/motion_contract.json:voice_pacing` é a fonte operacional de voice, rate, pitch, faixas de pausa e speech density. `narrators.json` preserva identidade, provider, idioma, formato, credenciais e fallback; campos de delivery duplicados são validados como espelho exato do motion contract.
 
 ## Planejamento visual
 
-`episodios/CO-001/visual_scenes.json` é o source of truth de S001–S018 e contém somente dados variáveis de cada cena. `src/visuals/engine.py` valida e seleciona esses objetos. `src/visuals/prompt_builder.py` resolve `FIN_V1`, `ILLUSTRATED_V1` e as regras globais, compilando uma única linha autocontida em memória para o provider.
+`roteiro_visual.csv` define dinamicamente a sequência planejada do episódio, sem quantidade ou duração fixa. `visual_scenes.json` contém somente os dados variáveis das cenas selecionadas; durante `visual_qualification`, ele e `scene_map.json` podem representar subconjuntos coerentes do roteiro. Em `production`, a cobertura é comparada à sequência real declarada no roteiro, nunca a uma contagem hardcoded. `src/visuals/engine.py` valida e seleciona esses objetos. `src/visuals/prompt_builder.py` resolve `FIN_V1`, `ILLUSTRATED_V1` e as regras globais, compilando uma única linha autocontida em memória para o provider.
 
 O mesmo JSON contém a `text_policy` obrigatória de cada cena. Os únicos modos de produção são `NONE` e `OVERLAY`. Em `OVERLAY`, o conteúdo textual permanece apenas no metadata estruturado; o modelo recebe somente os alvos de superfícies limpas para aplicação determinística posterior. A regra global é `NO UNDECLARED TEXT`: o modelo nunca decide sozinho se deve inserir letras, números, labels ou pseudo-texto. `EXACT` não é aceito em produção.
 
@@ -52,6 +54,14 @@ python main.py visuals validate
 
 ## Imagem primeiro, motion depois
 
-A imagem estática precisa funcionar sozinha antes de qualquer animação. Após aprovação, usar apenas motion leve e motivado: zoom in/out lento, pan sutil, hold, crossfade, parallax discreto ou shake curto. O render final combinará imagem aprovada, narração e timeline; não faz parte da etapa textual atual.
+A imagem estática precisa funcionar sozinha antes de qualquer animação. Após aprovação, usar apenas motion leve e motivado: zoom in/out lento, pan sutil, hold, crossfade, parallax discreto ou shake curto. O render final combina imagem aprovada, narração oficial e timeline real por meio do domínio `src/render/`.
 
 A imagem-base deve ser limpa, situacional e legível antes da animação. A prioridade é situação, ação, legibilidade, FIN subordinado à cena e somente então o cenário mínimo necessário. A imagem deve parecer um instante capturado da vida cotidiana, nunca uma pose de catálogo. A revisão humana acontece antes de qualquer motion simples.
+
+## Preflight e render final
+
+`python main.py render validate` executa somente o preflight. Ele resolve o episódio ativo dinamicamente e verifica narração oficial, timing `WORD_BOUNDARY_REAL` da mesma síntese, `scene_map.json`, cobertura visual, aprovação e existência dos assets, presets de motion, continuidade temporal e coerência de duração. O comando não chama FFmpeg nem produz vídeo.
+
+`python main.py render final --dry-run` passa pelas mesmas travas, verifica a disponibilidade do FFmpeg, grava `output/render/<episode_id>/render_plan.json` e `render_manifest.json` e exibe a lista de argumentos planejada sem executar o render. O plano é derivado da quantidade real de cenas e permanece determinístico para os mesmos inputs.
+
+`python main.py render final` só é permitido em `production`. Durante `visual_qualification`, ele encerra com `FINAL_RENDER_BLOCKED: episode is still in visual_qualification`, antes de invocar FFmpeg. O render real usa subprocess com lista de argumentos, sem shell, entrega 1920x1080 no frame rate central de 30 fps, H.264 e AAC, e publica `output/render/<episode_id>/final.mp4` somente após sucesso. Qualquer cena `OVERLAY` bloqueia enquanto o compositor determinístico de texto não existir.

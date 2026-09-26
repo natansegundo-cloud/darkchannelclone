@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import copy
 import hashlib
 import json
 import sys
@@ -17,11 +16,17 @@ from .providers import ProviderError, ProviderResult
 from .providers import azure_sdk, local_kokoro
 from .providers.pacing import (
     BEATS_DATA,
+    BEATS_METADATA,
     align_words,
     beats_for,
     process_voice,
     read_pcm_wav,
     write_pcm_wav,
+)
+from .validation import (
+    apply_operational_delivery,
+    validate_delivery_contract,
+    validate_pilot_narration,
 )
 
 
@@ -92,7 +97,7 @@ def run_narration(
     timing_path: Path,
     raw_dir: Path | None = None,
     raw_combined_path: Path | None = None,
-    episode_id: str = "CO-001",
+    episode_id: str = config.ACTIVE_EPISODE.episode_id,
     narrator_id: str | None = None,
     provider: str = "azure_sdk",
     env_file: Path = config.DEFAULT_ENV_PATH,
@@ -109,13 +114,19 @@ def run_narration(
     provider = _provider_name(provider)
     narrators = config.load_narrators()
     narrator = config.narrator_by_id(narrators, narrator_id or narrators["default_narrator"])
-    narrator = copy.deepcopy(narrator)
     contract = config.load_motion_contract()
-    if voice_pacing == "v2":
-        pacing = contract["voice_pacing"]
-        narrator["voice"] = pacing["voice"]
-        narrator.setdefault("delivery", {})["rate"] = pacing["rate"]
-        narrator["delivery"]["pitch"] = pacing.get("pitch", "0%")
+    config_errors = validate_delivery_contract(narrators, contract)
+    config_errors.extend(
+        validate_pilot_narration(
+            BEATS_DATA,
+            BEATS_METADATA,
+            contract,
+            production_stage=config.ACTIVE_EPISODE.production_stage,
+        )
+    )
+    if config_errors:
+        raise NarrationError("Configuração de narração inválida: " + "; ".join(config_errors))
+    narrator = apply_operational_delivery(narrator, contract)
     selected_beats = _select_beats(beats, voice_pacing)
     if not selected_beats:
         raise NarrationError("Nenhum beat selecionado para síntese.")
@@ -226,7 +237,11 @@ def run_narration(
     timing = {
         "schema_version": "2.0",
         "episode_id": episode_id,
-        "scope": "full_script" if len(selected_beats) == len(BEATS_DATA) else "selected_beats",
+        "scope": (
+            BEATS_METADATA["scope"]
+            if len(selected_beats) == len(BEATS_DATA)
+            else "selected_pilot_beats"
+        ),
         "provider": "azure_speech_sdk" if provider == "azure_sdk" else "kokoro_onnx",
         "voice": narrator["voice"],
         "language": narrator.get("language", "pt-BR"),
@@ -263,7 +278,12 @@ def build_parser(*, add_help: bool = True) -> argparse.ArgumentParser:
     parser.add_argument("--timing-json", type=Path, default=config.DEFAULT_OUTPUT / "timing.json")
     parser.add_argument("--raw-dir", type=Path, default=config.DEFAULT_OUTPUT / "raw")
     parser.add_argument("--raw-combined", type=Path, default=config.DEFAULT_OUTPUT / "raw" / "narration_raw.wav")
-    parser.add_argument("--episodio-id", "--episode", dest="episode_id", default="CO-001")
+    parser.add_argument(
+        "--episodio-id",
+        "--episode",
+        dest="episode_id",
+        default=config.ACTIVE_EPISODE.episode_id,
+    )
     parser.add_argument("--narrator", default=None)
     parser.add_argument("--provider", choices=("azure_sdk", "local_kokoro", "azure", "kokoro", "local"), default=None)
     parser.add_argument("--env-file", type=Path, default=config.DEFAULT_ENV_PATH)
