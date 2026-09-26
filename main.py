@@ -13,6 +13,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.narration import engine  # noqa: E402
+from src.visuals import generation_runner  # noqa: E402
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -23,15 +24,22 @@ def build_parser() -> argparse.ArgumentParser:
         parents=[engine.build_parser(add_help=False)],
         help="Gera narração, áudio e timing pelo engine consolidado.",
     )
+    subcommands.add_parser(
+        "visuals",
+        parents=[generation_runner.build_parser(add_help=False)],
+        help="Gera e valida o lote visual ilustrado em tiers.",
+    )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     raw_args = list(sys.argv[1:] if argv is None else argv)
     build_parser().parse_args(raw_args)
-    if not raw_args or raw_args[0] != "narracao":
-        raise SystemExit("O subcomando narracao é o único domínio implementado nesta fase.")
-    return engine.main(raw_args[1:])
+    if raw_args[0] == "narracao":
+        return engine.main(raw_args[1:])
+    if raw_args[0] == "visuals":
+        return generation_runner.main(raw_args[1:])
+    raise SystemExit(f"subcomando desconhecido: {raw_args[0]}")
 
 
 if __name__ == "__main__":

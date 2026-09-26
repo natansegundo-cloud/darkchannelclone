@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "provider": "openrouter",
+  "endpoint": "https://openrouter.ai/api/v1/images",
+  "scene_id": "S004",
+  "aspect_ratio": "16:9",
+  "resolution": "1K",
+  "n": 1,
+  "timeout": 180,
+  "output_format": "png",
+  "max_benchmark_cost_usd": 0.15,
+  "max_attempts_per_model": 1,
+  "include_scene_reference": false,
+  "candidates": [
+    {
+      "model": "sourceful/riverflow-v2.5-fast:free",
+      "output_file": "riverflow_free.png"
+    },
+    {
+      "model": "openai/gpt-image-2",
+      "output_file": "gpt_image_2.png"
+    },
+    {
+      "model": "black-forest-labs/flux.2-klein-4b",
+      "output_file": "flux_klein_4b.png"
+    },
+    {
+      "model": "bytedance-seed/seedream-4.5",
+      "output_file": "seedream_4_5.png"
+    }
+  ]
+}

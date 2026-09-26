@@ -1,20 +1,27 @@
 {
   "schema_version": "1.0",
   "character_id": "FIN",
-  "canonical_asset": "assets/character_bible/fin.svg",
-  "role": "recurring_visual_protagonist",
-  "canvas": "320x640",
+  "character_lock_version": "FIN_V1",
+  "canonical_references": [
+    "assets/character_bible/fin_turnaround.png",
+    "assets/character_bible/fin_poses.png"
+  ],
+  "head": "rounded head with a broad forehead and compact jaw",
+  "face": "large vertical black oval eyes, small simplified nose and mouth, and dark expressive eyebrows",
+  "hair": "short black hair, tousled and side-swept, with a compact spiky silhouette",
+  "clothing": "black two-piece suit and trousers over a plain white shirt",
+  "tie": "bright lime-green necktie, narrow and centered",
+  "proportions": "stylized compact adult figure with an oversized head, slim torso, and slim limbs",
+  "hands": "simplified rounded hands with minimal finger definition",
+  "legs": "slim straight legs in black suit trousers",
+  "shoes": "rounded black dress shoes with low heels",
   "palette": {
     "black": "#111111",
     "lime": "#C4E538",
-    "off_white": "#F4F3EF"
+    "white": "#FFFFFF",
+    "off_white": "#F4F3EF",
+    "skin": "light peach"
   },
-  "identity_locks": [
-    "proportions",
-    "face",
-    "tie",
-    "stroke_weight",
-    "base_silhouette",
-    "palette"
-  ]
+  "outline": "clean dark outlines with consistent medium weight and rounded joins",
+  "illustration_style": "clean simple 2D editorial cartoon with minimal shading and a friendly professional finish"
 }

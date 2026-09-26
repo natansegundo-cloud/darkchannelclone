@@ -5,6 +5,7 @@
 - Narração: `src/narration/` e `scripts/gerar_narracao.py`.
 - Configuração: `config/`.
 - Episódio ativo: `episodios/CO-001/`.
+- Cenas visuais canônicas: `episodios/CO-001/visual_scenes.json`.
 - Identidade do FIN: `assets/character_bible/`.
 - Saídas reproduzíveis: `output/` (não versionado).
 
@@ -20,3 +21,4 @@
 8. Não crie versões paralelas de arquivos. São proibidos os sufixos `_v2`, `_v3`, `_final`, `_novo`, `_refined` e `_candidate`; use Git.
 9. Não gere imagens nem vídeo sem solicitação explícita.
 10. Antes de concluir alterações, execute `python scripts/validar_projeto.py` e os testes relevantes.
+11. JSON é source of truth visual; prompts são compilados em memória e arquivos TXT de prompt não são canônicos.

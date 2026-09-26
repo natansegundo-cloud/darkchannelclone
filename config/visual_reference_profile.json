@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "profile_id": "ILLUSTRATED_V1",
+  "status": "APPROVED_REFERENCE",
+  "reference_only": true,
+  "fin_lock": "FIN_V1",
+  "required_references": [
+    "assets/character_bible/fin_turnaround.png",
+    "assets/character_bible/fin_poses.png"
+  ],
+  "scene_reference_images": {
+    "S004": "assets/visual_references/S004.png",
+    "S007": "assets/visual_references/S007.png",
+    "S009": "assets/visual_references/S009.png"
+  },
+  "style_rules": [
+    "Use a clean 2D illustrated explainer style.",
+    "Use an editorial cartoon visual language.",
+    "Use minimal shading and a professional YouTube explainer finish.",
+    "Build a concrete everyday situation with one dominant readable action.",
+    "Keep FIN integrated into the situation instead of presenting the character as a mascot.",
+    "Use a simple supportive environment and no more than three narratively essential props.",
+    "Keep the frame immediately readable in 16:9 with restrained editorial lighting."
+  ],
+  "negative_rules": [
+    "No character redesign or deviation from FIN_V1.",
+    "No promotional pose, mascot showcase or decorative staging.",
+    "No infographic, abstract metaphor or symbolic composition.",
+    "No text, labels, captions, letters, numbers or watermarks inside the image.",
+    "No extra people, crowded background or unnecessary props."
+  ],
+  "purpose": "Canonical qualitative reference profile for production-ready FIN situational illustrations; reference images guide visual language and never define reusable scene geometry."
+}

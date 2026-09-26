@@ -1,0 +1,397 @@
+{
+  "episode_id": "CO-001",
+  "character_lock": "FIN_V1",
+  "visual_profile": "ILLUSTRATED_V1",
+  "scenes": [
+    {
+      "scene_id": "S001",
+      "beat_id": "B001",
+      "scene_type": "CHARACTER_SCENE",
+      "dominant_idea": "A salary increase creates immediate relief.",
+      "situation": "FIN receives news of a salary increase during an ordinary workday.",
+      "action": "FIN pauses his work and checks the notification on his phone.",
+      "expression": "surprised relief, natural and restrained",
+      "environment": "ordinary home workspace",
+      "props": ["black smartphone", "laptop", "plain mug"],
+      "framing": {
+        "shot": "medium",
+        "subject_position": "left",
+        "camera_angle": "eye_level",
+        "fin_occupancy": 0.34
+      },
+      "lighting": "soft daytime work light",
+      "continuity_from": null,
+      "motion": {"preset": "SLOW_ZOOM_IN"},
+      "text_policy": {"mode": "NONE", "items": []}
+    },
+    {
+      "scene_id": "S002",
+      "beat_id": "B002",
+      "scene_type": "CHARACTER_SCENE",
+      "dominant_idea": "The first weeks feel materially easier.",
+      "situation": "FIN puts away basic groceries in a modest kitchen after the raise.",
+      "action": "FIN calmly organizes groceries while the normal household routine continues.",
+      "expression": "quiet relief",
+      "environment": "modest apartment kitchen",
+      "props": ["grocery bag", "basic groceries", "refrigerator"],
+      "framing": {
+        "shot": "wide",
+        "subject_position": "right",
+        "camera_angle": "eye_level",
+        "fin_occupancy": 0.28
+      },
+      "lighting": "soft natural kitchen light",
+      "continuity_from": "S001",
+      "motion": {"preset": "PAN_LEFT"},
+      "text_policy": {"mode": "NONE", "items": []}
+    },
+    {
+      "scene_id": "S003",
+      "beat_id": "B002",
+      "scene_type": "CHARACTER_SCENE",
+      "dominant_idea": "The extra financial margin begins to disappear.",
+      "situation": "FIN waits to pay for a small purchase at a convenience store.",
+      "action": "FIN checks his balance before using the payment terminal.",
+      "expression": "focused concern",
+      "environment": "small convenience-store checkout",
+      "props": ["black smartphone", "ordinary purchase", "payment terminal"],
+      "framing": {
+        "shot": "medium",
+        "subject_position": "left",
+        "camera_angle": "eye_level",
+        "fin_occupancy": 0.35
+      },
+      "lighting": "neutral shop lighting",
+      "continuity_from": "S002",
+      "motion": {"preset": "SLOW_ZOOM_IN"},
+      "text_policy": {"mode": "NONE", "items": []}
+    },
+    {
+      "scene_id": "S004",
+      "beat_id": "B004",
+      "scene_type": "CHARACTER_SCENE",
+      "dominant_idea": "An ordinary daily expense is not extravagance.",
+      "situation": "FIN is making a normal daily purchase.",
+      "action": "FIN checks a receipt while placing a modest grocery bag on the counter.",
+      "expression": "calm and matter-of-fact",
+      "environment": "small neighborhood checkout",
+      "props": ["plain receipt", "modest grocery bag", "card terminal"],
+      "framing": {
+        "shot": "wide",
+        "subject_position": "left",
+        "camera_angle": "eye_level",
+        "fin_occupancy": 0.30
+      },
+      "lighting": "soft daytime shop lighting",
+      "continuity_from": "S003",
+      "motion": {"preset": "PAN_RIGHT"},
+      "text_policy": {"mode": "NONE", "items": []}
+    },
+    {
+      "scene_id": "S005",
+      "beat_id": "B005",
+      "scene_type": "CHARACTER_SCENE",
+      "dominant_idea": "Several small routine costs absorb the new margin.",
+      "situation": "FIN organizes recurring purchases and household bills at home.",
+      "action": "FIN sorts a grocery bag, checks his phone, and places closed bill envelopes together.",
+      "expression": "attentive and practical",
+      "environment": "kitchen table used for household finances",
+      "props": ["grocery bag", "black smartphone", "closed bill envelopes"],
+      "framing": {
+        "shot": "wide",
+        "subject_position": "right",
+        "camera_angle": "eye_level",
+        "fin_occupancy": 0.29
+      },
+      "lighting": "soft evening home light",
+      "continuity_from": "S004",
+      "motion": {"preset": "LIGHT_PARALLAX"},
+      "text_policy": {"mode": "NONE", "items": []}
+    },
+    {
+      "scene_id": "S006",
+      "beat_id": "B006",
+      "scene_type": "ENVIRONMENT_SCENE",
+      "dominant_idea": "A recent comfort quickly blends into the background.",
+      "situation": "A recently purchased comfort is already part of the apartment routine.",
+      "action": "FIN passes through the room while occupied with an ordinary task.",
+      "expression": "neutral and accustomed",
+      "environment": "modest living room with one recently acquired comfort",
+      "props": ["discreet new armchair", "backpack", "keys"],
+      "framing": {
+        "shot": "wide",
+        "subject_position": "right",
+        "camera_angle": "eye_level",
+        "fin_occupancy": 0.26
+      },
+      "lighting": "soft natural apartment light",
+      "continuity_from": "S005",
+      "motion": {"preset": "PAN_LEFT"},
+      "text_policy": {"mode": "NONE", "items": []}
+    },
+    {
+      "scene_id": "S007",
+      "beat_id": "B006",
+      "scene_type": "CHARACTER_SCENE",
+      "dominant_idea": "A repeated habit now feels normal.",
+      "situation": "FIN pauses while unpacking another ordinary purchase at home.",
+      "action": "FIN looks at the receipt and recognizes how routine the purchase feels.",
+      "expression": "worried recognition and quiet reflection",
+      "environment": "modest apartment entry",
+      "props": ["plain receipt", "reusable shopping bag", "keys"],
+      "framing": {
+        "shot": "medium",
+        "subject_position": "right",
+        "camera_angle": "eye_level",
+        "fin_occupancy": 0.35
+      },
+      "lighting": "soft late-afternoon home light",
+      "continuity_from": "S006",
+      "motion": {"preset": "SLOW_ZOOM_IN"},
+      "text_policy": {"mode": "NONE", "items": []}
+    },
+    {
+      "scene_id": "S008",
+      "beat_id": "B007",
+      "scene_type": "CHARACTER_SCENE",
+      "dominant_idea": "A new purchase initially feels exciting.",
+      "situation": "FIN explores a new phone on its first day at home.",
+      "action": "FIN examines the new phone with focused curiosity.",
+      "expression": "genuine but restrained excitement",
+      "environment": "simple home workspace",
+      "props": ["black smartphone", "small phone box", "desk lamp"],
+      "framing": {
+        "shot": "medium",
+        "subject_position": "left",
+        "camera_angle": "eye_level",
+        "fin_occupancy": 0.34
+      },
+      "lighting": "soft focused desk light",
+      "continuity_from": "S007",
+      "motion": {"preset": "SLOW_ZOOM_IN"},
+      "text_policy": {"mode": "NONE", "items": []}
+    },
+    {
+      "scene_id": "S009",
+      "beat_id": "B007",
+      "scene_type": "CHARACTER_SCENE",
+      "dominant_idea": "The once-exciting phone becomes ordinary.",
+      "situation": "FIN uses the same phone in the same workspace after the novelty has faded.",
+      "action": "FIN casually checks the phone while picking up his keys.",
+      "expression": "neutral, accustomed and mildly disengaged",
+      "environment": "same familiar home workspace",
+      "props": ["same black smartphone", "keys", "desk lamp"],
+      "framing": {
+        "shot": "medium",
+        "subject_position": "left",
+        "camera_angle": "eye_level",
+        "fin_occupancy": 0.34
+      },
+      "lighting": "soft even room light",
+      "continuity_from": "S008",
+      "motion": {"preset": "SLOW_ZOOM_OUT"},
+      "text_policy": {"mode": "NONE", "items": []}
+    },
+    {
+      "scene_id": "S010",
+      "beat_id": "B008",
+      "scene_type": "OBJECT_SCENE",
+      "dominant_idea": "Repeated observations reveal adaptation over time.",
+      "situation": "Three sets of research forms suggest repeated data collection.",
+      "action": "The research forms are arranged in three chronological groups on a study desk.",
+      "expression": "no character visible",
+      "environment": "organized academic study desk",
+      "props": ["research forms with clean blank heading areas", "pencil", "calendar with clean blank label areas"],
+      "framing": {
+        "shot": "medium",
+        "subject_position": "right",
+        "camera_angle": "overhead_three_quarter"
+      },
+      "lighting": "clean soft desk light",
+      "continuity_from": "S009",
+      "motion": {"preset": "PAN_RIGHT"},
+      "text_policy": {
+        "mode": "OVERLAY",
+        "items": [
+          {"text": "PESQUISA", "target": "research form heading"},
+          {"text": "MÊS 1", "target": "first chronological group"},
+          {"text": "MÊS 2", "target": "second chronological group"},
+          {"text": "MÊS 3", "target": "third chronological group"}
+        ]
+      }
+    },
+    {
+      "scene_id": "S011",
+      "beat_id": "B008",
+      "scene_type": "CHARACTER_SCENE",
+      "dominant_idea": "Attention shifts from a recent purchase to the next improvement.",
+      "situation": "FIN uses a recent acquisition without excitement and notices another desired improvement.",
+      "action": "FIN handles the familiar object while glancing toward a modest home upgrade.",
+      "expression": "neutral and slightly distracted",
+      "environment": "living room where a recent purchase is already integrated",
+      "props": ["familiar household object", "visual catalog without text", "sofa"],
+      "framing": {
+        "shot": "wide",
+        "subject_position": "right",
+        "camera_angle": "eye_level",
+        "fin_occupancy": 0.29
+      },
+      "lighting": "soft neutral home light",
+      "continuity_from": "S010",
+      "motion": {"preset": "HOLD"},
+      "text_policy": {"mode": "NONE", "items": []}
+    },
+    {
+      "scene_id": "S012",
+      "beat_id": "B009",
+      "scene_type": "CHARACTER_SCENE",
+      "dominant_idea": "The higher income becomes the new baseline.",
+      "situation": "FIN prepares the monthly budget using the higher income as a normal starting point.",
+      "action": "FIN sorts closed envelopes while checking figures on a calculator and phone.",
+      "expression": "focused and accustomed",
+      "environment": "kitchen table at the beginning of the month",
+      "props": ["black smartphone", "closed envelopes", "calculator"],
+      "framing": {
+        "shot": "medium",
+        "subject_position": "left",
+        "camera_angle": "eye_level",
+        "fin_occupancy": 0.36
+      },
+      "lighting": "soft morning kitchen light",
+      "continuity_from": "S011",
+      "motion": {"preset": "SLOW_ZOOM_OUT"},
+      "text_policy": {"mode": "NONE", "items": []}
+    },
+    {
+      "scene_id": "S013",
+      "beat_id": "B010",
+      "scene_type": "CHARACTER_SCENE",
+      "dominant_idea": "A delivery becomes an ordinary weekday habit.",
+      "situation": "FIN opens a takeaway meal on a normal weekday evening.",
+      "action": "FIN opens the container at the kitchen table while briefly checking his phone.",
+      "expression": "comfortable and distracted rather than excited",
+      "environment": "modest apartment kitchen on an ordinary evening",
+      "props": ["unbranded delivery bag", "simple takeaway container", "black smartphone"],
+      "framing": {
+        "shot": "wide",
+        "subject_position": "right",
+        "camera_angle": "slightly_above_table",
+        "fin_occupancy": 0.28
+      },
+      "lighting": "warm practical kitchen light",
+      "continuity_from": "S012",
+      "motion": {"preset": "LIGHT_PARALLAX"},
+      "text_policy": {"mode": "NONE", "items": []}
+    },
+    {
+      "scene_id": "S014",
+      "beat_id": "B011",
+      "scene_type": "CHARACTER_SCENE",
+      "dominant_idea": "Improved comforts become expected parts of life.",
+      "situation": "FIN looks across an apartment whose recent comforts now feel normal.",
+      "action": "FIN moves through the room without pausing to admire the improvements.",
+      "expression": "neutral and accustomed",
+      "environment": "apartment with recently normalized comforts",
+      "props": ["improved furniture", "unbranded delivery bag", "black smartphone"],
+      "framing": {
+        "shot": "wide",
+        "subject_position": "left",
+        "camera_angle": "eye_level",
+        "fin_occupancy": 0.28
+      },
+      "lighting": "soft balanced apartment light",
+      "continuity_from": "S013",
+      "motion": {"preset": "PAN_RIGHT"},
+      "text_policy": {"mode": "NONE", "items": []}
+    },
+    {
+      "scene_id": "S015",
+      "beat_id": "B012",
+      "scene_type": "ENVIRONMENT_SCENE",
+      "dominant_idea": "Income can create real material security.",
+      "situation": "A modest stable home shows essential needs safely covered.",
+      "action": "FIN calmly puts away groceries in the background.",
+      "expression": "quiet relief and stability",
+      "environment": "secure apartment with integrated kitchen and living area",
+      "props": ["basic groceries", "small medicine box", "closed bill envelope"],
+      "framing": {
+        "shot": "wide",
+        "subject_position": "left",
+        "camera_angle": "eye_level",
+        "fin_occupancy": 0.27
+      },
+      "lighting": "calm natural daylight",
+      "continuity_from": "S014",
+      "motion": {"preset": "PAN_RIGHT"},
+      "text_policy": {"mode": "NONE", "items": []}
+    },
+    {
+      "scene_id": "S016",
+      "beat_id": "B012",
+      "scene_type": "CHARACTER_SCENE",
+      "dominant_idea": "Material security is visible in ordinary essentials.",
+      "situation": "FIN organizes food and medicine after handling the household bills.",
+      "action": "FIN places groceries in a cabinet and medicine on a shelf.",
+      "expression": "calm relief, grounded and secure",
+      "environment": "stable modest home kitchen",
+      "props": ["basic groceries", "small medicine box", "closed bill envelopes"],
+      "framing": {
+        "shot": "medium",
+        "subject_position": "right",
+        "camera_angle": "eye_level",
+        "fin_occupancy": 0.36
+      },
+      "lighting": "soft natural home light",
+      "continuity_from": "S015",
+      "motion": {"preset": "SLOW_ZOOM_OUT"},
+      "text_policy": {"mode": "NONE", "items": []}
+    },
+    {
+      "scene_id": "S017",
+      "beat_id": "B013",
+      "scene_type": "OBJECT_SCENE",
+      "dominant_idea": "The claim is grounded in reviewed evidence.",
+      "situation": "An academic paper is open beside a laptop during a real research review.",
+      "action": "The study pages remain open with a pencil marking the review point.",
+      "expression": "no character visible",
+      "environment": "quiet research desk",
+      "props": ["study pages without readable text", "laptop", "pencil"],
+      "framing": {
+        "shot": "medium",
+        "subject_position": "right",
+        "camera_angle": "overhead_three_quarter"
+      },
+      "lighting": "clean soft desk light",
+      "continuity_from": "S016",
+      "motion": {"preset": "SLOW_ZOOM_IN"},
+      "text_policy": {"mode": "NONE", "items": []}
+    },
+    {
+      "scene_id": "S018",
+      "beat_id": "B013",
+      "scene_type": "SIMPLE_DATA_SCENE",
+      "dominant_idea": "Results vary without revealing one universal threshold.",
+      "situation": "A single restrained point distribution shows moderate variation.",
+      "action": "Simple points form one readable distribution without axes or labels.",
+      "expression": "no character visible",
+      "environment": "clean off-white editorial background",
+      "props": ["simple points in two colors"],
+      "data_visual": {
+        "type": "point_distribution",
+        "count": 16,
+        "colors": ["#111111", "#C4E538"],
+        "distribution": "moderate",
+        "point_radius": 14
+      },
+      "framing": {
+        "shot": "wide",
+        "subject_position": "center",
+        "camera_angle": "straight_on"
+      },
+      "lighting": "flat clean editorial light",
+      "continuity_from": "S017",
+      "motion": {"preset": "HOLD"},
+      "text_policy": {"mode": "NONE", "items": []}
+    }
+  ]
+}

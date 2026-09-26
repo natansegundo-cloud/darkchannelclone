@@ -1,0 +1,78 @@
+{
+  "schema_version": "1.0",
+  "default_provider": "openrouter",
+  "default_visual_profile": "ILLUSTRATED_V1",
+  "quality_first": true,
+  "auto_quality_upgrade": false,
+  "generation_principle": "USE GENERATIVE AI ONLY WHEN GENERATIVE AI ADDS VALUE.",
+  "decision_priority": [
+    "narrative_adherence",
+    "FIN_V1_consistency",
+    "visual_quality",
+    "continuity",
+    "cost"
+  ],
+  "default_budget_usd": 0.15,
+  "max_retries_per_scene": 1,
+  "dry_run": false,
+  "resume": true,
+  "require_single_line_prompt": true,
+  "tiers": {
+    "cheap_draft": {
+      "enabled": true,
+      "provider": "openrouter",
+      "model": "black-forest-labs/flux.2-klein-4b",
+      "max_attempts": 1,
+      "timeout": 120,
+      "estimated_cost_per_image": 0.02
+    },
+    "mid_fallback": {
+      "enabled": true,
+      "provider": "openrouter",
+      "model": "openai/gpt-image-2",
+      "max_attempts": 1,
+      "timeout": 180,
+      "estimated_cost_per_image": 0.08
+    },
+    "premium_optional": {
+      "enabled": false,
+      "provider": "openrouter",
+      "model": "openai/gpt-image-2",
+      "max_attempts": 1,
+      "timeout": 180,
+      "estimated_cost_per_image": 0.4
+    }
+  },
+  "fallback_policy": {
+    "first_tier": "cheap_draft",
+    "second_tier": "mid_fallback",
+    "third_tier": "premium_optional"
+  },
+  "scene_type_routing": {
+    "source": "SCENE_TYPE",
+    "routes": {
+      "CHARACTER_SCENE": {
+        "renderer": "generative",
+        "tier": "cheap_draft",
+        "allow_fallback": true
+      },
+      "ENVIRONMENT_SCENE": {
+        "renderer": "generative",
+        "tier": "cheap_draft",
+        "allow_fallback": true
+      },
+      "OBJECT_SCENE": {
+        "renderer": "generative",
+        "tier": "mid_fallback",
+        "allow_fallback": false,
+        "with_character_route": "CHARACTER_SCENE"
+      },
+      "SIMPLE_DATA_SCENE": {
+        "renderer": "deterministic_local",
+        "provider": "local",
+        "model": "deterministic_local",
+        "cost_usd": 0.0
+      }
+    }
+  }
+}

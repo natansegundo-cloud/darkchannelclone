@@ -1,44 +1,19 @@
 # FIN — character bible
 
-`fin.svg` é a fonte visual oficial do protagonista recorrente do Capital Oculto.
+As referências canônicas do FIN são:
 
-## Estrutura obrigatória
+- `fin_turnaround.png`: identidade, proporções e vistas frontal, 3/4, lateral e traseira;
+- `fin_poses.png`: expressões e poses recorrentes.
 
-Somente `char-base` é um `<symbol>`. Todas as partes vivem como `<g>` no mesmo sistema de coordenadas `320x640`:
+O lock estruturado está em `config/character_fin.json` e sua versão ativa é `FIN_V1`.
 
-- `char-head`;
-- `char-neck`;
-- `char-torso`;
-- `char-tie`;
-- `char-arm-left`;
-- `char-arm-right`;
-- `char-leg-left`;
-- `char-leg-right`.
+## Uso obrigatório
 
-É proibido converter qualquer uma dessas partes para `<symbol>`. Isso recriaria o aninhamento de viewports que causou os bugs críticos das versões anteriores.
+- Preservar cabeça, rosto, cabelo, roupa, gravata, proporções, mãos, pernas, sapatos, paleta, contorno e estilo.
+- Usar as duas folhas em conjunto; nenhuma pose autoriza redesenhar a identidade.
+- Manter o FIN como personagem 2D editorial, simples, legível e consistente.
+- Não adicionar idade, biografia, personalidade ou outros atributos não visuais ao lock.
 
-## Uso
+## Legado
 
-- Cena estática: uma única instância `<use href="#char-base">`.
-- Cena articulada: montar as partes com `<use href="#char-head">`, `<use href="#char-arm-left">` e equivalentes.
-- Nunca copiar ou redesenhar a geometria do personagem dentro de uma cena.
-- Nunca alterar proporções, rosto, gravata, espessuras, silhueta-base ou paleta.
-
-## Pivôs
-
-Os pivôs estão registrados em `data-pivot` no próprio SVG:
-
-- cabeça: `160 205`;
-- torso e gravata: `160 225`;
-- braço esquerdo: `112 231`;
-- braço direito: `208 231`;
-- perna esquerda: `137 370`;
-- perna direita: `183 370`.
-
-## Paleta imutável
-
-- preto: `#111111`;
-- lima: `#C4E538`;
-- off-white: `#F4F3EF`.
-
-Qualquer evolução deve alterar o arquivo canônico existente e passar por revisão visual. Não crie cópias com sufixos de versão.
+`fin.svg` é apenas uma referência técnica histórica do pipeline anterior. Ele não é a fonte canônica do pipeline ilustrado e não deve orientar novas imagens.
