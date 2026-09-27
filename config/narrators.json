@@ -1,11 +1,17 @@
 {
   "schema_version": "1.0",
   "default_narrator": "capital_oculto_narrator_v1",
+  "voice_status": {
+    "pt-BR-HumbertoNeural": "CANONICAL",
+    "pt-BR-AntonioNeural": "SUPERSEDED",
+    "pt-BR-FabioNeural": "REJECTED"
+  },
   "narrators": [
     {
       "id": "capital_oculto_narrator_v1",
       "provider": "azure_sdk",
-      "voice": "pt-BR-AntonioNeural",
+      "voice": "pt-BR-HumbertoNeural",
+      "status": "CANONICAL",
       "language": "pt-BR",
       "profile": [
         "masculino",
@@ -22,7 +28,10 @@
         "notes": "Ritmo moderadamente deliberado; sem estilo comercial, telemarketing ou entusiasmo artificial."
       },
       "azure": {
-        "output_format": "riff-24khz-16bit-mono-pcm",
+        "output_format": "riff-48khz-16bit-mono-pcm",
+        "sample_rate": 48000,
+        "bit_depth": 16,
+        "channels": 1,
         "env_file": "scripts/.env",
         "key_names": ["AZURE_SPEECH_KEY", "SPEECH_KEY"],
         "region_names": ["AZURE_SPEECH_REGION", "SPEECH_REGION"],

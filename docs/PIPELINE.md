@@ -14,7 +14,11 @@ ROTEIRO OFICIAL
 
 ## Narração e timing
 
-O episódio ativo é resolvido uma única vez por `config/project.json:active_episode`. Seus arquivos ficam em `episodios/<active_episode>/`, e `episodio.json:production_stage` distingue `visual_qualification` de `production`. Nesta etapa, B001–B013 são metadata `pilot_beats`, com cobertura parcial, e não são rotulados como roteiro completo. A narração oficial ainda não foi implementada nem é exigida. Quando executado explicitamente, o piloto usa Azure Speech SDK e mantém áudio e eventos `WordBoundary` ligados pelo mesmo `synthesis_id`; timings reais existentes não são recalculados pela camada visual.
+O episódio ativo é resolvido uma única vez por `config/project.json:active_episode`. Seus arquivos ficam em `episodios/<active_episode>/`, e `episodio.json:production_stage` distingue `visual_qualification` de `production`. `roteiro_narracao.md` é a única fonte de conteúdo da fala oficial: `src/narration/script_parser.py` aceita somente blockquotes ligados a beats Bxxx explícitos e falha com `UNMARKED_NARRATION_TEXT` diante de prosa ambígua. B001–B013 hardcoded permanecem apenas como `pilot_beats` de compatibilidade e não entram no modo oficial.
+
+`python main.py narracao --official --dry-run` compila todos os beats do episódio ativo em `output/audio/<episode_id>/narration_plan.json`, incluindo hashes, contagens e delivery canônico, sem chamar provider ou produzir áudio. Seleção parcial por `--beats` é proibida no modo oficial. A síntese oficial continua desabilitada nesta etapa; quando habilitada futuramente, consumirá esse roteiro compilado. O piloto explícito continua usando Azure Speech SDK e mantém áudio e eventos `WordBoundary` ligados pelo mesmo `synthesis_id`; timings reais existentes não são recalculados pela camada visual.
+
+`visual_qualification.status=PASSED` registra que a linguagem e as rotas visuais foram qualificadas sem promover o episódio automaticamente para `production`. A fronteira de produção cruza todo `episode_id` declarado e rejeita divergências com `EPISODE_ID_MISMATCH`. A cobertura completa é derivada da sequência real do roteiro e da etapa anterior, nunca de uma contagem ou duração fixa.
 
 `config/motion_contract.json:voice_pacing` é a fonte operacional de voice, rate, pitch, faixas de pausa e speech density. `narrators.json` preserva identidade, provider, idioma, formato, credenciais e fallback; campos de delivery duplicados são validados como espelho exato do motion contract.
 

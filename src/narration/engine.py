@@ -23,6 +23,30 @@ from .providers.pacing import (
     read_pcm_wav,
     write_pcm_wav,
 )
+from .script_parser import NarrationScriptError, parse_narration_script
+from .delivery import DeliveryCueError, apply_delivery_cues, load_delivery_cues
+from .official import OfficialNarrationError, preserve_official_rollback, run_official_narration
+from .benchmark import (
+    DEFAULT_BEATS as BENCHMARK_DEFAULT_BEATS,
+    DEFAULT_VOICES as BENCHMARK_DEFAULT_VOICES,
+    VoiceBenchmarkError,
+    dry_run_summary,
+    plan_voice_benchmark,
+    run_voice_benchmark,
+)
+from .cleanup import (
+    DEFAULT_BEATS as CLEANUP_DEFAULT_BEATS,
+    CleanupError,
+    find_humberto_source,
+    run_humberto_cleanup,
+)
+from .azure_48k_benchmark import (
+    DEFAULT_BEATS as AZURE_48K_DEFAULT_BEATS,
+    Azure48kBenchmarkError,
+    build_plan as build_azure_48k_plan,
+    dry_run_summary as azure_48k_dry_run_summary,
+    run_benchmark as run_azure_48k_benchmark,
+)
 from .validation import (
     apply_operational_delivery,
     validate_delivery_contract,
@@ -87,6 +111,77 @@ def _select_beats(selection: str | None, pacing: str) -> list[dict[str, Any]]:
     # O modo legado mantém a unidade canônica de beats, mas usa a entrega
     # configurada no narrador. A seleção e a saída permanecem compatíveis.
     return beats_for(selection)
+
+
+def build_official_narration_plan(
+    *,
+    input_path: Path,
+    output_path: Path,
+    episode_id: str,
+    narrator_id: str | None = None,
+) -> dict[str, Any]:
+    """Compile the active episode's official script without synthesis."""
+
+    if episode_id != config.ACTIVE_EPISODE.episode_id:
+        raise NarrationError(
+            "EPISODE_ID_MISMATCH: official narration must use the active episode"
+        )
+    if input_path.resolve() != config.DEFAULT_INPUT.resolve():
+        raise NarrationError(
+            "official narration source must be the active episode roteiro_narracao.md"
+        )
+    narrators = config.load_narrators()
+    narrator = config.narrator_by_id(
+        narrators, narrator_id or narrators["default_narrator"]
+    )
+    contract = config.load_motion_contract()
+    config_errors = validate_delivery_contract(narrators, contract)
+    if config_errors:
+        raise NarrationError(
+            "Configuração de narração inválida: " + "; ".join(config_errors)
+        )
+    narrator = apply_operational_delivery(narrator, contract)
+    azure = narrator.get("azure", {})
+    output_format = azure.get("output_format")
+    if output_format != "riff-48khz-16bit-mono-pcm":
+        raise NarrationError("Official narration requires native RIFF 48 kHz 16-bit mono PCM")
+    source_file = config.relative_path(input_path)
+    beats = parse_narration_script(input_path, source_file=source_file)
+    cues = load_delivery_cues(config.ACTIVE_EPISODE.file("narration_delivery.json"), beats)
+    beats = apply_delivery_cues(
+        beats,
+        cues,
+        provider="azure_sdk",
+        voice=narrator["voice"],
+        rate=narrator["delivery"]["rate"],
+        pitch=narrator["delivery"]["pitch"],
+        output_format=output_format,
+    )
+    plan = {
+        "schema_version": "1.0",
+        "episode_id": episode_id,
+        "scope": "official_narration",
+        "official_narration": True,
+        "source_file": source_file,
+        "source_sha256": _sha256(input_path),
+        "beat_count": len(beats),
+        "word_count": sum(int(beat["word_count"]) for beat in beats),
+        "voice": narrator["voice"],
+        "rate": narrator["delivery"]["rate"],
+        "pitch": narrator["delivery"]["pitch"],
+        "output_format": output_format,
+        "sample_rate": int(azure.get("sample_rate", 0)),
+        "bit_depth": int(azure.get("bit_depth", 0)),
+        "channels": int(azure.get("channels", 0)),
+        "beats": beats,
+    }
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(
+        json.dumps(plan, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    return plan
 
 
 def run_narration(
@@ -272,8 +367,19 @@ def run_narration(
 
 def build_parser(*, add_help: bool = True) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Engine único de narração do Capital Oculto.", add_help=add_help)
+    parser.add_argument(
+        "narration_action", nargs="?",
+        choices=("benchmark-voices", "cleanup-humberto", "benchmark-azure-48k"),
+    )
     parser.add_argument("--entrada", "--input", type=Path, default=config.DEFAULT_INPUT)
-    parser.add_argument("--beats", default=",".join(beat["beat_id"] for beat in BEATS_DATA))
+    parser.add_argument("--beats", default=None)
+    parser.add_argument("--official", action="store_true")
+    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument(
+        "--narration-plan",
+        type=Path,
+        default=config.DEFAULT_OUTPUT / "narration_plan.json",
+    )
     parser.add_argument("--saida", "--output", type=Path, default=config.DEFAULT_OUTPUT / "narration.wav")
     parser.add_argument("--timing-json", type=Path, default=config.DEFAULT_OUTPUT / "timing.json")
     parser.add_argument("--raw-dir", type=Path, default=config.DEFAULT_OUTPUT / "raw")
@@ -290,12 +396,262 @@ def build_parser(*, add_help: bool = True) -> argparse.ArgumentParser:
     parser.add_argument("--pause-ms", type=int, default=None)
     parser.add_argument("--no-processing", action="store_true")
     parser.add_argument("--voice-pacing", choices=("v2", "legado"), default="v2")
+    parser.add_argument("--voices", default=None)
+    parser.add_argument("--output-gain-db", type=float, default=-3.0)
+    parser.add_argument("--output-gain-variants-db", default=None)
+    parser.add_argument("--reuse-official-cache", action="store_true")
+    parser.add_argument("--run-id", default=None)
+    parser.add_argument("--source-raw-dir", type=Path, default=None)
+    parser.add_argument("--ffmpeg", default="ffmpeg")
+    parser.add_argument(
+        "--benchmark-output",
+        type=Path,
+        default=config.DEFAULT_OUTPUT / "voice_benchmark",
+    )
+    parser.add_argument(
+        "--azure-48k-output",
+        type=Path,
+        default=config.DEFAULT_OUTPUT / "azure_48k_benchmark",
+    )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    if args.narration_action == "benchmark-azure-48k":
+        try:
+            azure_48k_beats = tuple(
+                item.strip()
+                for item in (args.beats or ",".join(AZURE_48K_DEFAULT_BEATS)).split(",")
+                if item.strip()
+            )
+            azure_48k_plan = build_azure_48k_plan(
+                episode_id=args.episode_id,
+                script_path=config.project_path(args.entrada),
+                delivery_path=config.ACTIVE_EPISODE.file("narration_delivery.json"),
+                benchmark_root=config.project_path(args.azure_48k_output),
+                beats=azure_48k_beats,
+                run_id=args.run_id,
+            )
+            if args.dry_run:
+                print(json.dumps(azure_48k_dry_run_summary(azure_48k_plan), ensure_ascii=False, indent=2))
+                return 0
+            narrators = config.load_narrators()
+            credential_narrator = config.narrator_by_id(
+                narrators, narrators["default_narrator"]
+            )
+            key, region = config.azure_credentials(
+                credential_narrator, config.project_path(args.env_file)
+            )
+            azure_48k_manifest = run_azure_48k_benchmark(
+                plan=azure_48k_plan, key=key, region=region
+            )
+        except (
+            Azure48kBenchmarkError,
+            NarrationScriptError,
+            DeliveryCueError,
+            OfficialNarrationError,
+            config.ConfigError,
+            ProviderError,
+            OSError,
+            KeyError,
+            ValueError,
+            json.JSONDecodeError,
+        ) as exc:
+            print(f"ERRO: {exc}", file=sys.stderr)
+            return 2
+        manifest_path = Path(azure_48k_plan["run_dir"]) / "manifest.json"
+        print(f"AZURE_48K_MANIFEST={config.relative_path(manifest_path)}")
+        print(f"AZURE_CALLS_TOTAL={azure_48k_manifest['azure_calls_total']}")
+        return 0
+    if args.narration_action == "cleanup-humberto":
+        try:
+            cleanup_beats = tuple(
+                item.strip()
+                for item in (args.beats or ",".join(CLEANUP_DEFAULT_BEATS)).split(",")
+                if item.strip()
+            )
+            benchmark_root = config.project_path(args.benchmark_output)
+            source_raw_dir = (
+                config.project_path(args.source_raw_dir)
+                if args.source_raw_dir is not None
+                else find_humberto_source(benchmark_root, beats=cleanup_beats)
+            )
+            if args.dry_run:
+                print(json.dumps({
+                    "voice": "pt-BR-HumbertoNeural",
+                    "beats": list(cleanup_beats),
+                    "source_raw_directory": config.relative_path(source_raw_dir),
+                    "variants": [
+                        "baseline", "gentle_denoise", "gentle_lowpass",
+                        "gentle_denoise_lowpass",
+                    ],
+                    "output_gain_db": -9.0,
+                    "azure_calls_total": 0,
+                    "official_artifacts_touched": False,
+                }, ensure_ascii=False, indent=2))
+                return 0
+            cleanup_manifest = run_humberto_cleanup(
+                source_raw_dir=source_raw_dir,
+                benchmark_root=benchmark_root,
+                script_path=config.project_path(args.entrada),
+                delivery_path=config.ACTIVE_EPISODE.file("narration_delivery.json"),
+                episode_id=args.episode_id,
+                beats=cleanup_beats,
+                run_id=args.run_id,
+                ffmpeg=args.ffmpeg,
+            )
+        except (
+            CleanupError,
+            VoiceBenchmarkError,
+            NarrationScriptError,
+            DeliveryCueError,
+            OfficialNarrationError,
+            config.ConfigError,
+            ProviderError,
+            OSError,
+            KeyError,
+            ValueError,
+            json.JSONDecodeError,
+        ) as exc:
+            print(f"ERRO: {exc}", file=sys.stderr)
+            return 2
+        output = benchmark_root / cleanup_manifest["run_id"] / "humberto_cleanup" / "manifest.json"
+        print(f"CLEANUP_MANIFEST={config.relative_path(output)}")
+        print("AZURE_CALLS_TOTAL=0")
+        return 0
+    if args.narration_action == "benchmark-voices":
+        try:
+            benchmark_beats = tuple(
+                item.strip()
+                for item in (args.beats or ",".join(BENCHMARK_DEFAULT_BEATS)).split(",")
+                if item.strip()
+            )
+            benchmark_voices = tuple(
+                item.strip()
+                for item in (args.voices or ",".join(BENCHMARK_DEFAULT_VOICES)).split(",")
+                if item.strip()
+            )
+            gain_variants = (
+                tuple(
+                    float(item.strip())
+                    for item in args.output_gain_variants_db.split(",")
+                    if item.strip()
+                )
+                if args.output_gain_variants_db is not None
+                else None
+            )
+            benchmark_plan = plan_voice_benchmark(
+                episode_id=args.episode_id,
+                script_path=config.project_path(args.entrada),
+                delivery_path=config.ACTIVE_EPISODE.file("narration_delivery.json"),
+                benchmark_root=config.project_path(args.benchmark_output),
+                beats=benchmark_beats,
+                voices=benchmark_voices,
+                output_gain_db=args.output_gain_db,
+                output_gain_variants_db=gain_variants,
+                reuse_official_cache=args.reuse_official_cache,
+                official_raw_dir=config.DEFAULT_OUTPUT / "raw",
+                run_id=args.run_id,
+            )
+            if args.dry_run:
+                print(json.dumps(dry_run_summary(benchmark_plan), ensure_ascii=False, indent=2))
+                return 0
+            narrators = config.load_narrators()
+            credential_narrator = config.narrator_by_id(
+                narrators, narrators["default_narrator"]
+            )
+            key, region = config.azure_credentials(
+                credential_narrator, config.project_path(args.env_file)
+            )
+            manifest = run_voice_benchmark(
+                plan=benchmark_plan,
+                key=key,
+                region=region,
+                official_raw_dir=config.DEFAULT_OUTPUT / "raw",
+            )
+        except (
+            VoiceBenchmarkError,
+            NarrationScriptError,
+            DeliveryCueError,
+            OfficialNarrationError,
+            config.ConfigError,
+            ProviderError,
+            OSError,
+            KeyError,
+            ValueError,
+            json.JSONDecodeError,
+        ) as exc:
+            print(f"ERRO: {exc}", file=sys.stderr)
+            return 2
+        print(f"BENCHMARK_MANIFEST={config.relative_path(benchmark_plan['run_dir'] / 'manifest.json')}")
+        print(f"AZURE_CALLS_TOTAL={manifest['azure_calls_total']}")
+        return 0
+    if args.official:
+        if args.beats is not None:
+            print(
+                "ERRO: --official does not allow partial --beats selection.",
+                file=sys.stderr,
+            )
+            return 2
+        try:
+            plan = build_official_narration_plan(
+                input_path=config.project_path(args.entrada),
+                output_path=config.project_path(args.narration_plan),
+                episode_id=args.episode_id,
+                narrator_id=args.narrator,
+            )
+            if not args.dry_run:
+                if args.provider is not None and _provider_name(args.provider) != "azure_sdk":
+                    raise NarrationError("Official narration requires provider azure_sdk; no fallback is allowed.")
+                if args.pause_ms is not None or args.no_processing or args.voice_pacing != "v2":
+                    raise NarrationError("Official narration uses canonical pacing and processing settings.")
+                narrators = config.load_narrators()
+                narrator = config.narrator_by_id(narrators, args.narrator or narrators["default_narrator"])
+                contract = config.load_motion_contract()
+                errors = validate_delivery_contract(narrators, contract)
+                if errors:
+                    raise NarrationError("Configuração de narração inválida: " + "; ".join(errors))
+                narrator = apply_operational_delivery(narrator, contract)
+                key, region = config.azure_credentials(narrator, config.project_path(args.env_file))
+                preserve_official_rollback(
+                    output_path=config.project_path(args.saida),
+                    timing_path=config.project_path(args.timing_json),
+                    raw_dir=config.project_path(args.raw_dir),
+                )
+                timing = run_official_narration(
+                    plan=plan, narrator=narrator, contract=contract,
+                    output_path=config.project_path(args.saida),
+                    timing_path=config.project_path(args.timing_json),
+                    raw_dir=config.project_path(args.raw_dir),
+                    raw_combined_path=config.project_path(args.raw_combined),
+                    synthesize=azure_sdk.synthesize, key=key, region=region,
+                    benchmark_cache_root=config.DEFAULT_OUTPUT / "azure_48k_benchmark",
+                )
+        except (
+            NarrationError,
+            NarrationScriptError,
+            DeliveryCueError,
+            OfficialNarrationError,
+            config.ConfigError,
+            OSError,
+            KeyError,
+            ValueError,
+            json.JSONDecodeError,
+        ) as exc:
+            print(f"ERRO: {exc}", file=sys.stderr)
+            return 2
+        print(f"NARRATION_PLAN={config.relative_path(config.project_path(args.narration_plan))}")
+        print(f"OFFICIAL_BEATS={plan['beat_count']}")
+        print(f"OFFICIAL_WORDS={plan['word_count']}")
+        if not args.dry_run:
+            print(f"NARRATION_AUDIO={timing['audio_file']}")
+            print(f"NARRATION_TIMING={config.relative_path(config.project_path(args.timing_json))}")
+        return 0
+    if args.dry_run:
+        print("ERRO: --dry-run requires --official.", file=sys.stderr)
+        return 2
     provider = args.provider
     if provider is None:
         env = config.load_env(config.project_path(args.env_file))

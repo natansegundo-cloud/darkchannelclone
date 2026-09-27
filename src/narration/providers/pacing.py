@@ -248,6 +248,7 @@ def process_voice(samples: array, sample_rate: int) -> tuple[array, dict[str, An
     previous_output = 0.0
     threshold = 32767.0 * (10.0 ** (compressor_threshold_dbfs / 20.0))
     filtered: list[float] = []
+    compressor_max_gain_reduction_db = 0.0
     for sample in samples:
         value = float(sample)
         highpassed = alpha * (previous_output + value - previous_input)
@@ -255,13 +256,24 @@ def process_voice(samples: array, sample_rate: int) -> tuple[array, dict[str, An
         previous_output = highpassed
         magnitude = abs(highpassed)
         if magnitude > threshold:
+            input_magnitude = magnitude
             magnitude = threshold + (magnitude - threshold) / compressor_ratio
+            compressor_max_gain_reduction_db = max(
+                compressor_max_gain_reduction_db,
+                20.0 * math.log10(input_magnitude / max(1.0, magnitude)),
+            )
             highpassed = math.copysign(magnitude, highpassed)
         filtered.append(highpassed)
     peak = max((abs(value) for value in filtered), default=1.0)
     target_peak = 32767.0 * (10.0 ** (target_peak_dbfs / 20.0))
     gain = min(4.0, target_peak / max(1.0, peak))
     limiter = 32767.0 * (10.0 ** (limiter_dbfs / 20.0))
+    pre_limiter_peak = peak * gain
+    limiter_peak_reduction_db = (
+        20.0 * math.log10(pre_limiter_peak / limiter)
+        if pre_limiter_peak > limiter
+        else 0.0
+    )
     processed = array("h", (round(max(-limiter, min(limiter, value * gain))) for value in filtered))
     return processed, {
         "implementation": "python_stdlib_deterministic_pcm",
@@ -270,5 +282,7 @@ def process_voice(samples: array, sample_rate: int) -> tuple[array, dict[str, An
         "compressor_ratio": compressor_ratio,
         "peak_normalization_dbfs": target_peak_dbfs,
         "limiter_ceiling_dbfs": limiter_dbfs,
+        "compressor_max_gain_reduction_db": round(compressor_max_gain_reduction_db, 4),
+        "limiter_peak_reduction_db": round(limiter_peak_reduction_db, 4),
         "duration_preserved": True,
     }

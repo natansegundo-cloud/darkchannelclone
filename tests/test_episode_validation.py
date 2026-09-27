@@ -12,6 +12,7 @@ from unittest import mock
 import src.episodes as episodes
 import src.visuals.engine as visual_engine
 from src.episodes import (
+    EpisodeConfigError,
     load_json,
     load_visual_script,
     resolve_active_episode,
@@ -67,6 +68,27 @@ class DynamicEpisodeValidationTest(unittest.TestCase):
 
             self.assertEqual(context.episode_id, "EP-DYNAMIC")
             self.assertEqual(context.episode_dir, episode_dir.resolve())
+
+    def test_active_episode_metadata_mismatch_fails_with_clear_code(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="episode-mismatch-") as temporary:
+            root = Path(temporary)
+            episode_dir = root / "episodios" / "EP-ACTIVE"
+            (root / "config").mkdir(parents=True)
+            episode_dir.mkdir(parents=True)
+            (root / "config" / "project.json").write_text(
+                json.dumps({"active_episode": "EP-ACTIVE"}), encoding="utf-8"
+            )
+            (episode_dir / "episodio.json").write_text(
+                json.dumps(
+                    {
+                        "episodio_id": "EP-OTHER",
+                        "production_stage": "visual_qualification",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(EpisodeConfigError, "EPISODE_ID_MISMATCH"):
+                resolve_active_episode(root)
 
     def test_seven_scene_episode_is_valid(self) -> None:
         self.assertEqual(validate_visual_script(planned_rows(7)), [])
@@ -134,6 +156,34 @@ class DynamicEpisodeValidationTest(unittest.TestCase):
         errors = validate_visual_script(rows)
         self.assertTrue(any("duplicate scene_ids" in error for error in errors))
 
+    def test_declared_complete_scene_map_cannot_have_partial_coverage(self) -> None:
+        rows = planned_rows(7)
+        payload = {
+            "episode_id": "TEST-EPISODE",
+            "timing_quality": "WORD_BOUNDARY_REAL",
+            "visual_direction": "FIN_AUDIENCE_PROXY_SITUATIONAL",
+            "status": "COMPLETE",
+            "scenes": [
+                {
+                    "scene_id": row["scene_id"],
+                    "scene_type": row["scene_type"],
+                    "start": float(row["start"]),
+                    "end": float(row["end"]),
+                    "visual_intent": "Declared visual intent",
+                    "setting": "Declared setting",
+                }
+                for row in rows[:3]
+            ],
+        }
+        errors = validate_scene_map(
+            payload,
+            expected_episode_id="TEST-EPISODE",
+            planned_scene_ids=planned_ids(rows),
+            planned_scene_types=planned_types(rows),
+            production_stage="visual_qualification",
+        )
+        self.assertTrue(any("declared COMPLETE coverage" in error for error in errors))
+
     def test_visual_scene_absent_from_script_fails(self) -> None:
         canonical = load_visual_scenes()
         rows = planned_rows(7)
@@ -197,6 +247,7 @@ class DynamicEpisodeValidationTest(unittest.TestCase):
         ids = planned_ids(rows)
         types = planned_types(rows)
         self.assertEqual(context.production_stage, "visual_qualification")
+        self.assertEqual(context.metadata["visual_qualification"]["status"], "PASSED")
         self.assertEqual(validate_visual_script(rows), [])
         self.assertEqual(
             validate_scene_map(

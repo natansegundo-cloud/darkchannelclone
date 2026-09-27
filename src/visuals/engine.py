@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from src.episodes import (
+    EPISODE_ID_MISMATCH,
     PRODUCTION_STAGES,
     load_json as load_episode_json,
     load_visual_script,
@@ -136,7 +137,10 @@ def validate_visual_scenes(
     if not isinstance(episode_id, str) or not episode_id.strip():
         errors.append("episode_id must be a non-empty string")
     elif expected_episode_id is not None and episode_id != expected_episode_id:
-        errors.append("episode_id must match the active episode")
+        errors.append(
+            f"{EPISODE_ID_MISMATCH}: visual_scenes.json declares "
+            f"{episode_id!r}; active episode is {expected_episode_id!r}"
+        )
     if payload.get("character_lock") != "FIN_V1":
         errors.append("character_lock must be FIN_V1")
     if payload.get("visual_profile") != "ILLUSTRATED_V1":

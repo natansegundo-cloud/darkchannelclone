@@ -23,6 +23,7 @@ VISUAL_FORMATS = ("image",)
 OFFICIAL_VISUAL_DIRECTION = "FIN_AUDIENCE_PROXY_SITUATIONAL"
 REAL_TIMING_QUALITY = "WORD_BOUNDARY_REAL"
 SCENE_ID_PATTERN = re.compile(r"S(\d+)")
+EPISODE_ID_MISMATCH = "EPISODE_ID_MISMATCH"
 
 
 class EpisodeConfigError(ValueError):
@@ -67,7 +68,10 @@ def resolve_active_episode(
     metadata = load_json(metadata_path)
     metadata_episode_id = str(metadata.get("episodio_id", "")).strip()
     if metadata_episode_id != episode_id:
-        raise EpisodeConfigError("episodio.json id must match project active_episode")
+        raise EpisodeConfigError(
+            f"{EPISODE_ID_MISMATCH}: episodio.json declares "
+            f"{metadata_episode_id!r}; active episode is {episode_id!r}"
+        )
     production_stage = str(metadata.get("production_stage", "")).strip()
     if production_stage not in PRODUCTION_STAGES:
         raise EpisodeConfigError(
@@ -191,6 +195,7 @@ def validate_ordered_subset(
     *,
     label: str,
     production_stage: str,
+    declared_complete: bool = False,
 ) -> list[str]:
     """Valida pertencimento, ordem relativa e cobertura derivada do roteiro."""
 
@@ -205,8 +210,36 @@ def validate_ordered_subset(
     known_positions = [positions[scene_id] for scene_id in scene_ids if scene_id in positions]
     if known_positions != sorted(known_positions):
         errors.append(f"{label}: relative order differs from roteiro_visual")
-    if production_stage == "production" and list(scene_ids) != list(planned_scene_ids):
-        errors.append(f"{label}: production coverage must match roteiro_visual")
+    if (production_stage == "production" or declared_complete) and list(
+        scene_ids
+    ) != list(planned_scene_ids):
+        reason = "production" if production_stage == "production" else "declared COMPLETE"
+        errors.append(f"{label}: {reason} coverage must match roteiro_visual")
+    return errors
+
+
+def validate_episode_identity(
+    expected_episode_id: str,
+    artifacts: Mapping[str, Mapping[str, Any] | None],
+    *,
+    field_overrides: Mapping[str, str] | None = None,
+) -> list[str]:
+    """Cross-check declared episode identities without requiring optional fields."""
+
+    errors: list[str] = []
+    overrides = field_overrides or {}
+    for label, payload in artifacts.items():
+        if not isinstance(payload, Mapping):
+            continue
+        field = overrides.get(label, "episode_id")
+        if field not in payload:
+            continue
+        declared = str(payload.get(field) or "").strip()
+        if declared != expected_episode_id:
+            errors.append(
+                f"{EPISODE_ID_MISMATCH}: {label} declares {declared!r}; "
+                f"active episode is {expected_episode_id!r}"
+            )
     return errors
 
 
@@ -223,7 +256,10 @@ def validate_scene_map(
 
     errors: list[str] = []
     if payload.get("episode_id") != expected_episode_id:
-        errors.append("scene_map: episode_id does not match active episode")
+        errors.append(
+            f"{EPISODE_ID_MISMATCH}: scene_map.json declares "
+            f"{payload.get('episode_id')!r}; active episode is {expected_episode_id!r}"
+        )
     if payload.get("visual_direction") != OFFICIAL_VISUAL_DIRECTION:
         errors.append("scene_map: visual_direction is not canonical")
     timing_quality = payload.get("timing_quality")
@@ -244,8 +280,10 @@ def validate_scene_map(
             planned_scene_ids,
             label="scene_map",
             production_stage=production_stage,
+            declared_complete=str(payload.get("status") or "").upper() == "COMPLETE",
         )
     )
+    complete_timeline = payload.get("schema_version") == "2.0"
     previous_start: float | None = None
     previous_end: float | None = None
     for index, scene in enumerate(scenes):
@@ -261,7 +299,26 @@ def validate_scene_map(
             and scene.get("scene_type") != planned_scene_types[label]
         ):
             errors.append(f"{label}: scene_type differs from roteiro_visual")
-        if not scene.get("visual_intent") or not scene.get("setting"):
+        if complete_timeline:
+            required = {
+                "scene_id", "episode_id", "start", "end", "duration", "beat_ids",
+                "speech_start", "speech_end", "narration_anchor", "visual_type",
+                "character_presence", "source", "timing_source", "timing_quality",
+            }
+            missing = required - set(scene)
+            if missing:
+                errors.append(f"{label}: missing scene map fields: {', '.join(sorted(missing))}")
+            if scene.get("episode_id") != expected_episode_id:
+                errors.append(f"{label}: episode_id differs from active episode")
+            if scene.get("source") != "roteiro_visual.csv":
+                errors.append(f"{label}: editorial source must be roteiro_visual.csv")
+            if scene.get("timing_quality") != REAL_TIMING_QUALITY:
+                errors.append(f"{label}: timing_quality must be {REAL_TIMING_QUALITY}")
+            if scene.get("visual_type") != scene.get("scene_type"):
+                errors.append(f"{label}: visual_type differs from scene_type")
+            if not isinstance(scene.get("beat_ids"), list) or not scene.get("beat_ids"):
+                errors.append(f"{label}: beat_ids must be a non-empty list")
+        elif not scene.get("visual_intent") or not scene.get("setting"):
             errors.append(f"{label}: visual_intent and setting are required")
         try:
             start = _parse_time(scene.get("start"))
@@ -271,10 +328,31 @@ def validate_scene_map(
             continue
         if end <= start:
             errors.append(f"{label}: duration must be positive")
+        if complete_timeline:
+            try:
+                duration = float(scene.get("duration"))
+                speech_start = float(scene.get("speech_start"))
+                speech_end = float(scene.get("speech_end"))
+                if abs(duration - (end - start)) > 0.001:
+                    errors.append(f"{label}: duration differs from interval")
+                if not start <= speech_start <= speech_end <= end + 0.001:
+                    errors.append(f"{label}: speech interval is outside scene interval")
+            except (TypeError, ValueError):
+                errors.append(f"{label}: invalid duration or speech interval")
         if previous_start is not None and start < previous_start:
             errors.append(f"{label}: scene_map must be in increasing temporal order")
         if previous_end is not None and start < previous_end:
             errors.append(f"{label}: scene_map timing overlaps the previous scene")
+        if complete_timeline and previous_end is not None and abs(start - previous_end) > 0.001:
+            errors.append(f"{label}: scene_map timeline has a gap")
         previous_start = start
         previous_end = end
+    if complete_timeline and scenes:
+        try:
+            if abs(float(scenes[0]["start"])) > 0.001:
+                errors.append("scene_map: first scene must start at zero")
+            if abs(float(scenes[-1]["end"]) - float(payload["duration_seconds"])) > 0.001:
+                errors.append("scene_map: last scene must end at official duration")
+        except (KeyError, TypeError, ValueError):
+            errors.append("scene_map: invalid official duration coverage")
     return errors

@@ -14,6 +14,8 @@ from time import perf_counter
 from typing import Any, Iterable, Mapping, Sequence
 from uuid import uuid4
 
+from src.episodes import EPISODE_ID_MISMATCH, resolve_active_episode
+
 from .benchmark import (
     DEFAULT_BENCHMARK_OUTPUT,
     configure_api_key_environment,
@@ -43,6 +45,8 @@ from .routing import (
     resolve_visual_route,
     routed_tier_names,
 )
+from .scene_map import SceneMapError, build_scene_map, write_scene_map
+from .spec_preview import preview_visual_specs
 from .validators import (
     validate_compiled_prompt,
     validate_generated_image,
@@ -607,6 +611,7 @@ def _run_generation_unlocked(
 
     manifest: dict[str, Any] = {
         "schema_version": "1.1",
+        "episode_id": scene_payload["episode_id"],
         "run_id": run_id,
         "reason": request_reason,
         "generated_at": _utc_now(),
@@ -713,7 +718,17 @@ def _load_manifest(output_dir: Path) -> dict[str, Any]:
     manifest_path = output_dir / "manifest.json"
     if not manifest_path.is_file():
         raise FileNotFoundError(f"visual manifest not found: {manifest_path}")
-    return json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    expected_episode_id = str(load_visual_scenes()["episode_id"])
+    declared_episode_id = manifest.get("episode_id")
+    if declared_episode_id is None:
+        manifest["episode_id"] = expected_episode_id
+    elif str(declared_episode_id) != expected_episode_id:
+        raise ValueError(
+            f"{EPISODE_ID_MISMATCH}: visual manifest declares "
+            f"{declared_episode_id!r}; active episode is {expected_episode_id!r}"
+        )
+    return manifest
 
 
 def _manifest_scene_map(manifest: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
@@ -943,6 +958,19 @@ def _parse_scene_ids(value: str) -> tuple[str, ...]:
 def build_parser(*, add_help: bool = True) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Pipeline de geração visual", add_help=add_help)
     commands = parser.add_subparsers(dest="visual_command", required=True)
+    episode = resolve_active_episode(ROOT)
+    scene_map = commands.add_parser(
+        "scene-map", help="Reconstrói a timeline editorial usando WordBoundary oficial."
+    )
+    scene_map.add_argument("--visual-script", type=Path, default=episode.file("roteiro_visual.csv"))
+    scene_map.add_argument("--visual-scenes", type=Path, default=episode.file("visual_scenes.json"))
+    scene_map.add_argument("--timing", type=Path, default=ROOT / "output" / "audio" / episode.episode_id / "timing.json")
+    scene_map.add_argument("--narration", type=Path, default=episode.file("roteiro_narracao.md"))
+    scene_map.add_argument("--output", type=Path, default=episode.file("scene_map.json"))
+    preview = commands.add_parser(
+        "preview", help="Compila prompts e calcula rotas/custo sem chamar providers."
+    )
+    preview.add_argument("--output", type=Path, default=DEFAULT_GENERATED_OUTPUT)
     generate = commands.add_parser("generate", help="Compila e gera cenas do JSON canônico.")
     selection = generate.add_mutually_exclusive_group(required=True)
     selection.add_argument("--scenes", type=_parse_scene_ids)
@@ -1002,6 +1030,36 @@ def build_parser(*, add_help: bool = True) -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.visual_command == "scene-map":
+        try:
+            payload = build_scene_map(
+                visual_script_path=args.visual_script,
+                visual_scenes_path=args.visual_scenes,
+                timing_path=args.timing,
+                narration_path=args.narration,
+                existing_scene_map_path=args.output,
+            )
+            write_scene_map(args.output, payload)
+        except (SceneMapError, OSError, ValueError, KeyError, json.JSONDecodeError) as exc:
+            print(f"FAIL: {exc}")
+            return 2
+        print(f"SCENE_MAP={_display_path(args.output)}")
+        print(f"EDITORIAL_SCENES={payload['editorial_scene_count']}")
+        print(f"VISUAL_SCENES_EXISTING={payload['visual_scenes_existing']}")
+        print(f"VISUAL_SCENES_MISSING={payload['visual_scenes_missing']}")
+        return 0
+    if args.visual_command == "preview":
+        episode = resolve_active_episode(ROOT)
+        scene_map_payload = json.loads(episode.file("scene_map.json").read_text(encoding="utf-8-sig"))
+        baseline_missing = scene_map_payload.get("missing_visual_scene_ids", [])
+        preview_payload = preview_visual_specs(
+            visual_scenes_path=episode.file("visual_scenes.json"),
+            visual_script_path=episode.file("roteiro_visual.csv"),
+            scene_map_path=episode.file("scene_map.json"), output_dir=args.output,
+            cost_scene_ids=baseline_missing,
+        )
+        print(json.dumps(preview_payload, ensure_ascii=False, indent=2))
+        return 0
     if args.visual_command == "benchmark":
         manifest = run_benchmark(
             scene_id=args.scene.upper(),

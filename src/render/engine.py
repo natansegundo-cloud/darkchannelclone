@@ -323,11 +323,13 @@ def execute_final_render(
     root: str | Path = ROOT,
     episode_context: EpisodeContext | None = None,
     narration_path: str | Path | None = None,
+    narration_metadata_path: str | Path | None = None,
     timing_path: str | Path | None = None,
     scene_map_path: str | Path | None = None,
     visual_scenes_path: str | Path | None = None,
     visual_manifest_path: str | Path | None = None,
     motion_contract_path: str | Path | None = None,
+    render_plan_path: str | Path | None = None,
     output_dir: str | Path | None = None,
     ffmpeg: str | Path = "ffmpeg",
     dry_run: bool = False,
@@ -344,11 +346,13 @@ def execute_final_render(
         root=project_root,
         episode_context=context,
         narration_path=narration_path,
+        narration_metadata_path=narration_metadata_path,
         timing_path=timing_path,
         scene_map_path=scene_map_path,
         visual_scenes_path=visual_scenes_path,
         visual_manifest_path=visual_manifest_path,
         motion_contract_path=motion_contract_path,
+        render_plan_path=render_plan_path,
         require_production=True,
     )
     if not preflight["passed"]:
@@ -416,11 +420,13 @@ def execute_final_render(
 
 def _add_source_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--audio", type=Path, help="Official narration WAV.")
+    parser.add_argument("--narration-metadata", type=Path)
     parser.add_argument("--timing", type=Path, help="Official narration timing JSON.")
     parser.add_argument("--scene-map", type=Path)
     parser.add_argument("--visual-scenes", type=Path)
     parser.add_argument("--visual-manifest", type=Path)
     parser.add_argument("--motion-contract", type=Path)
+    parser.add_argument("--render-plan", type=Path)
 
 
 def build_parser(*, add_help: bool = True) -> argparse.ArgumentParser:
@@ -442,11 +448,13 @@ def build_parser(*, add_help: bool = True) -> argparse.ArgumentParser:
 def _preflight_from_args(args: argparse.Namespace) -> dict[str, Any]:
     return run_preflight(
         narration_path=args.audio,
+        narration_metadata_path=args.narration_metadata,
         timing_path=args.timing,
         scene_map_path=args.scene_map,
         visual_scenes_path=args.visual_scenes,
         visual_manifest_path=args.visual_manifest,
         motion_contract_path=args.motion_contract,
+        render_plan_path=args.render_plan,
         require_production=False,
     )
 
@@ -469,11 +477,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         result = execute_final_render(
             narration_path=args.audio,
+            narration_metadata_path=args.narration_metadata,
             timing_path=args.timing,
             scene_map_path=args.scene_map,
             visual_scenes_path=args.visual_scenes,
             visual_manifest_path=args.visual_manifest,
             motion_contract_path=args.motion_contract,
+            render_plan_path=args.render_plan,
             output_dir=args.output_dir,
             ffmpeg=args.ffmpeg,
             dry_run=args.dry_run,

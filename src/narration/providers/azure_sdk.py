@@ -8,6 +8,7 @@ from xml.sax.saxutils import escape
 
 from . import ProviderError, ProviderResult
 from .pacing import read_pcm_wav
+from ..delivery import ssml_body
 
 
 SDK_PACKAGE = "azure-cognitiveservices-speech==1.51.2"
@@ -48,11 +49,24 @@ def _ssml(beat: dict[str, Any], narrator: dict[str, Any]) -> str:
     rate = delivery.get("rate", "0%")
     pitch = delivery.get("pitch", "0%")
     volume = delivery.get("volume", "default")
+    has_local_prosody = bool(beat.get("prosody"))
+    body = beat.get("ssml_body") or ssml_body(
+        beat,
+        base_prosody={"rate": rate, "pitch": pitch, "volume": volume}
+        if has_local_prosody
+        else None,
+    )
+    if has_local_prosody:
+        spoken = body
+    else:
+        spoken = (
+            f'<prosody rate="{escape(rate)}" pitch="{escape(pitch)}" volume="{escape(volume)}">'
+            f'{body}</prosody>'
+        )
     return (
         f'<speak version="1.0" xml:lang="{escape(language)}">'
         f'<voice name="{escape(voice)}">'
-        f'<prosody rate="{escape(rate)}" pitch="{escape(pitch)}" volume="{escape(volume)}">'
-        f'{beat["ssml_body"]}</prosody></voice></speak>'
+        f'{spoken}</voice></speak>'
     )
 
 
@@ -62,13 +76,18 @@ def synthesize(
     narrator: dict[str, Any],
     key: str,
     region: str,
+    output_sample_rate: int = 24_000,
 ) -> ProviderResult:
     speechsdk = _sdk()
     speech_config = speechsdk.SpeechConfig(subscription=key, region=region)
     speech_config.speech_synthesis_voice_name = narrator["voice"]
-    speech_config.set_speech_synthesis_output_format(
-        speechsdk.SpeechSynthesisOutputFormat.Riff24Khz16BitMonoPcm
-    )
+    if output_sample_rate == 24_000:
+        output_format = speechsdk.SpeechSynthesisOutputFormat.Riff24Khz16BitMonoPcm
+    elif output_sample_rate == 48_000:
+        output_format = speechsdk.SpeechSynthesisOutputFormat.Riff48Khz16BitMonoPcm
+    else:
+        raise ProviderError(f"Taxa de saída Azure não suportada: {output_sample_rate}")
+    speech_config.set_speech_synthesis_output_format(output_format)
     synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config, audio_config=None)
     boundaries: list[dict[str, Any]] = []
 
@@ -111,6 +130,10 @@ def synthesize(
         raise ProviderError("Azure SDK não retornou synthesis_id para a síntese.")
     audio_data = bytes(result.audio_data)
     sample_rate, _samples = read_pcm_wav(audio_data)
+    if sample_rate != output_sample_rate:
+        raise ProviderError(
+            f"Azure SDK retornou {sample_rate} Hz; esperado {output_sample_rate} Hz."
+        )
     boundaries.sort(key=lambda item: (item["audio_offset_100ns"] is None, item["audio_offset_100ns"] or 0))
     return ProviderResult(
         audio_data=audio_data,

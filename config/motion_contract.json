@@ -3,7 +3,11 @@
   "contract_id": "CO_MOTION_CONTRACT_V1",
   "voice_pacing": {
     "provider": "azure_sdk",
-    "voice": "pt-BR-AntonioNeural",
+    "voice": "pt-BR-HumbertoNeural",
+    "output_format": "riff-48khz-16bit-mono-pcm",
+    "sample_rate": 48000,
+    "bit_depth": 16,
+    "channels": 1,
     "rate": "-7%",
     "pitch": "0%",
     "volume": "default",

@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "beats": {
+    "B005": {
+      "pause_after": [
+        {
+          "text": "o que parece normal",
+          "milliseconds": 450
+        },
+        {
+          "text": "com quem você se compara",
+          "milliseconds": 500
+        }
+      ]
+    }
+  }
+}

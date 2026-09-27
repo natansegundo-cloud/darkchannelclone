@@ -136,11 +136,11 @@ class CanonicalVisualScenesTest(unittest.TestCase):
         payload = load_visual_scenes()
         scenes = payload["scenes"]
         expected = {
-            **{f"S{number:03d}": "FIN" for number in range(1, 10)},
-            "S010": "NONE",
-            **{f"S{number:03d}": "FIN" for number in range(11, 17)},
-            "S017": "NONE",
-            "S018": "NONE",
+            scene["scene_id"]: (
+                "NONE" if scene["scene_type"] in {"OBJECT_SCENE", "SIMPLE_DATA_SCENE"}
+                else "FIN"
+            )
+            for scene in scenes
         }
         self.assertEqual(
             {scene["scene_id"]: scene["character_presence"] for scene in scenes},
@@ -160,7 +160,11 @@ class CanonicalVisualScenesTest(unittest.TestCase):
         self.assertTrue(validate_visual_scenes(invalid_character))
 
         invalid_data = deepcopy(payload)
-        invalid_data["scenes"][-1]["character_presence"] = "FIN"
+        data_index = next(
+            index for index, scene in enumerate(invalid_data["scenes"])
+            if scene["scene_type"] == "SIMPLE_DATA_SCENE"
+        )
+        invalid_data["scenes"][data_index]["character_presence"] = "FIN"
         self.assertTrue(validate_visual_scenes(invalid_data))
 
         allowed_object_and_environment = deepcopy(payload)
@@ -170,7 +174,11 @@ class CanonicalVisualScenesTest(unittest.TestCase):
 
     def test_simple_data_scene_uses_structured_data_visual_only(self) -> None:
         payload = load_visual_scenes()
-        simple_data = payload["scenes"][-1]
+        data_index = next(
+            index for index, scene in enumerate(payload["scenes"])
+            if scene["scene_type"] == "SIMPLE_DATA_SCENE"
+        )
+        simple_data = payload["scenes"][data_index]
         self.assertEqual(
             simple_data["data_visual"],
             {
@@ -191,22 +199,22 @@ class CanonicalVisualScenesTest(unittest.TestCase):
 
         invalid_variants = []
         missing = deepcopy(payload)
-        del missing["scenes"][-1]["data_visual"]
+        del missing["scenes"][data_index]["data_visual"]
         invalid_variants.append(missing)
         wrong_type = deepcopy(payload)
-        wrong_type["scenes"][-1]["data_visual"]["type"] = "bars"
+        wrong_type["scenes"][data_index]["data_visual"]["type"] = "bars"
         invalid_variants.append(wrong_type)
         zero_count = deepcopy(payload)
-        zero_count["scenes"][-1]["data_visual"]["count"] = 0
+        zero_count["scenes"][data_index]["data_visual"]["count"] = 0
         invalid_variants.append(zero_count)
         bad_color = deepcopy(payload)
-        bad_color["scenes"][-1]["data_visual"]["colors"] = ["black"]
+        bad_color["scenes"][data_index]["data_visual"]["colors"] = ["black"]
         invalid_variants.append(bad_color)
         bad_radius = deepcopy(payload)
-        bad_radius["scenes"][-1]["data_visual"]["point_radius"] = 0
+        bad_radius["scenes"][data_index]["data_visual"]["point_radius"] = 0
         invalid_variants.append(bad_radius)
         incompatible_text = deepcopy(payload)
-        incompatible_text["scenes"][-1]["text_policy"] = {
+        incompatible_text["scenes"][data_index]["text_policy"] = {
             "mode": "OVERLAY",
             "items": [{"text": "X", "target": "chart"}],
         }
@@ -652,7 +660,10 @@ class VisualGenerationPipelineTest(unittest.TestCase):
             output = Path(temporary)
             manifest = run_generation(None, output_dir=output, dry_run=True)
 
-            self.assertEqual(len(manifest["scenes"]), 18)
+            self.assertEqual(
+                len(manifest["scenes"]),
+                len(load_visual_scenes()["scenes"]),
+            )
             self.assertTrue(all(scene["status"] == "dry_run" for scene in manifest["scenes"]))
             self.assertEqual(manifest["budget"]["spent_usd"], 0.0)
             self.assertEqual(list(output.rglob("*.txt")), [])
@@ -675,6 +686,7 @@ class VisualGenerationPipelineTest(unittest.TestCase):
             self.assertTrue((output / "drafts" / "S009.png").is_file())
             self.assertFalse((output / "S004").exists())
             self.assertEqual(validate_output(output, ROOT), [])
+            self.assertEqual(manifest["episode_id"], "CO-001")
             for scene in manifest["scenes"]:
                 self.assertEqual(set(scene), SCENE_MANIFEST_FIELDS)
                 self.assertEqual(scene["status"], "generated")

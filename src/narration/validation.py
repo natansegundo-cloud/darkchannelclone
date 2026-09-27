@@ -6,9 +6,10 @@ from copy import deepcopy
 from typing import Any, Mapping, Sequence
 
 
-CANONICAL_VOICE = "pt-BR-AntonioNeural"
+CANONICAL_VOICE = "pt-BR-HumbertoNeural"
 CANONICAL_RATE = "-7%"
 CANONICAL_PITCH = "0%"
+CANONICAL_OUTPUT_FORMAT = "riff-48khz-16bit-mono-pcm"
 PILOT_BEATS_SCOPE = "pilot_beats"
 
 
@@ -45,6 +46,15 @@ def validate_delivery_contract(
         errors.append("narrator provider must match motion contract")
     if narrator.get("voice") != pacing.get("voice"):
         errors.append("narrator voice must match motion contract")
+    azure = narrator.get("azure", {})
+    for field, expected in (
+        ("output_format", CANONICAL_OUTPUT_FORMAT), ("sample_rate", 48000),
+        ("bit_depth", 16), ("channels", 1),
+    ):
+        if pacing.get(field) != expected:
+            errors.append(f"canonical {field} must be {expected}")
+        if not isinstance(azure, Mapping) or azure.get(field) != pacing.get(field):
+            errors.append(f"narrator {field} must match motion contract")
     delivery = narrator.get("delivery", {})
     if not isinstance(delivery, Mapping):
         errors.append("narrator delivery must be an object")

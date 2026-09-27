@@ -18,15 +18,19 @@ from src.episodes import (  # noqa: E402
     load_json as load_path_json,
     load_visual_script,
     resolve_active_episode,
+    validate_episode_identity,
     validate_scene_map,
     validate_visual_script,
 )
 from src.narration.providers.pacing import BEATS_DATA, BEATS_METADATA  # noqa: E402
+from src.narration.script_parser import parse_narration_script  # noqa: E402
+from src.narration.delivery import load_delivery_cues  # noqa: E402
 from src.narration.validation import (  # noqa: E402
     validate_delivery_contract,
     validate_pilot_narration,
 )
 from src.visuals.engine import validate_visual_scenes  # noqa: E402
+from src.visuals.production_plan import validate_visual_production_plan  # noqa: E402
 
 
 REQUIRED = (
@@ -50,6 +54,8 @@ REQUIRED = (
     "assets/visual_references/S009.png",
     "src/episodes.py",
     "src/narration/engine.py",
+    "src/narration/script_parser.py",
+    "src/narration/delivery.py",
     "src/narration/validation.py",
     "src/visuals/engine.py",
     "src/visuals/prompt_builder.py",
@@ -57,6 +63,7 @@ REQUIRED = (
     "src/visuals/budget_manager.py",
     "src/visuals/benchmark.py",
     "src/visuals/generation_runner.py",
+    "src/visuals/production_plan.py",
     "src/visuals/validators.py",
     "scripts/gerar_narracao.py",
 )
@@ -79,12 +86,18 @@ def validate() -> list[str]:
             errors.append(f"arquivo obrigatório ausente: {relative}")
 
     episode = resolve_active_episode(ROOT)
+    visual_qualification = episode.metadata.get("visual_qualification")
+    if not isinstance(visual_qualification, dict) or visual_qualification.get(
+        "status"
+    ) != "PASSED":
+        errors.append("visual_qualification.status deve ser PASSED")
     for name in (
         "episodio.json",
         "roteiro_narracao.md",
         "roteiro_visual.csv",
         "scene_map.json",
         "visual_scenes.json",
+        "visual_production_plan.json",
     ):
         if not episode.file(name).is_file():
             errors.append(f"arquivo obrigatório ausente: {episode.file(name).relative_to(ROOT)}")
@@ -113,6 +126,10 @@ def validate() -> list[str]:
             production_stage=episode.production_stage,
         )
     )
+    official_beats = parse_narration_script(episode.file("roteiro_narracao.md"))
+    load_delivery_cues(episode.file("narration_delivery.json"), official_beats)
+    if not official_beats:
+        errors.append("roteiro_narracao.md não contém beats oficiais")
     if fin.get("character_lock_version") != "FIN_V1":
         errors.append("character_lock_version deve ser FIN_V1")
     canonical_references = fin.get("canonical_references", [])
@@ -271,6 +288,33 @@ def validate() -> list[str]:
             planned_scene_ids=planned_scene_ids,
             planned_scene_types=planned_scene_types,
             production_stage=episode.production_stage,
+        )
+    )
+    visual_production_plan = load_path_json(episode.file("visual_production_plan.json"))
+    errors.extend(validate_visual_production_plan(
+        visual_production_plan,
+        episode_id=episode.episode_id,
+        planned_scene_ids=planned_scene_ids,
+        generation_config=visual_generation,
+        project_root=ROOT,
+    ))
+
+    visual_manifest_path = ROOT / "output" / "generated_images" / "manifest.json"
+    visual_manifest = (
+        json.loads(visual_manifest_path.read_text(encoding="utf-8"))
+        if visual_manifest_path.is_file()
+        else None
+    )
+    errors.extend(
+        validate_episode_identity(
+            episode.episode_id,
+            {
+                "episodio.json": episode.metadata,
+                "scene_map.json": scene_map,
+                "visual_scenes.json": visual_scenes,
+                "visual manifest": visual_manifest,
+            },
+            field_overrides={"episodio.json": "episodio_id"},
         )
     )
 

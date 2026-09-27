@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+import socket
 import subprocess
 import tempfile
 import unittest
 import wave
 from pathlib import Path
+from unittest import mock
 
 import main as project_main
 
@@ -57,6 +59,10 @@ def _project(
         {"episodio_id": episode_id, "production_stage": stage},
     )
     _write_json(contract, {"schema_version": "1.0", "contract_id": "TEST_MOTION"})
+    (episode_dir / "roteiro_visual.csv").write_text(
+        "scene_id\n" + "".join(f"SHOT-{index + 1}\n" for index in range(scene_count)),
+        encoding="utf-8",
+    )
     _write_wav(audio, duration)
     _write_json(
         timing,
@@ -165,6 +171,61 @@ class RenderEngineTest(unittest.TestCase):
         result = run_preflight(root=paths["root"])
         self.assertTrue(result["passed"])
         self.assertFalse(list(paths["root"].rglob("*.mp4")))
+
+    def test_wrong_timing_episode_fails_closed(self) -> None:
+        paths = _project(self.tmp_path)
+        timing = _load(paths["timing"])
+        timing["episode_id"] = "ANOTHER-EPISODE"
+        _write_json(paths["timing"], timing)
+        result = run_preflight(root=paths["root"])
+        self.assertFalse(result["passed"])
+        self.assertTrue(any("EPISODE_ID_MISMATCH" in error for error in result["errors"]))
+
+    def test_wrong_scene_map_episode_fails_closed(self) -> None:
+        paths = _project(self.tmp_path)
+        scene_map_path = paths["episode_dir"] / "scene_map.json"
+        scene_map = _load(scene_map_path)
+        scene_map["episode_id"] = "ANOTHER-EPISODE"
+        _write_json(scene_map_path, scene_map)
+        result = run_preflight(root=paths["root"])
+        self.assertFalse(result["passed"])
+        self.assertTrue(any("EPISODE_ID_MISMATCH" in error for error in result["errors"]))
+
+    def test_wrong_visual_manifest_episode_fails_closed(self) -> None:
+        paths = _project(self.tmp_path)
+        manifest = _load(paths["manifest"])
+        manifest["episode_id"] = "ANOTHER-EPISODE"
+        _write_json(paths["manifest"], manifest)
+        result = run_preflight(root=paths["root"])
+        self.assertFalse(result["passed"])
+        self.assertTrue(any("EPISODE_ID_MISMATCH" in error for error in result["errors"]))
+
+    def test_optional_artifact_episode_ids_are_cross_validated(self) -> None:
+        paths = _project(self.tmp_path)
+        narration_metadata = paths["audio"].parent / "narration.json"
+        render_plan = paths["root"] / "output" / "render" / "EP-DYNAMIC" / "render_plan.json"
+        _write_json(narration_metadata, {"episode_id": "ANOTHER-EPISODE"})
+        _write_json(render_plan, {"episode_id": "ANOTHER-EPISODE"})
+        visual_scenes_path = paths["episode_dir"] / "visual_scenes.json"
+        visual_scenes = _load(visual_scenes_path)
+        visual_scenes["episode_id"] = "ANOTHER-EPISODE"
+        _write_json(visual_scenes_path, visual_scenes)
+
+        result = run_preflight(root=paths["root"])
+
+        mismatches = [error for error in result["errors"] if "EPISODE_ID_MISMATCH" in error]
+        self.assertEqual(len(mismatches), 3)
+
+    def test_preflight_identity_validation_never_uses_network(self) -> None:
+        paths = _project(self.tmp_path)
+        original_connection = socket.create_connection
+        with mock.patch(
+            "socket.create_connection",
+            side_effect=AssertionError("preflight attempted network access"),
+        ):
+            result = run_preflight(root=paths["root"])
+        self.assertTrue(result["passed"])
+        self.assertIs(socket.create_connection, original_connection)
 
     def test_missing_official_audio_fails(self) -> None:
         paths = _project(self.tmp_path)

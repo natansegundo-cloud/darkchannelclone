@@ -8,7 +8,7 @@ Você ganha mais. Por que ainda parece insuficiente?
 
 ### 00:00–00:42 — O aumento que fica invisível
 
-Os horários desta seção são estimativas editoriais. O contrato técnico do piloto é gerado em `03A_AUDIO_TIMING.json`.
+- **Nota editorial:** Os horários desta seção são estimativas editoriais. O contrato técnico do piloto é gerado em `03A_AUDIO_TIMING.json`.
 
 ### B001 — A notícia do aumento
 
@@ -110,79 +110,129 @@ Os horários desta seção são estimativas editoriais. O contrato técnico do p
 
 ### B010 — O luxo vira normal
 
-Ontem, pedir comida era exceção. Hoje, é terça-feira. Ontem, o aplicativo de transporte era emergência. Hoje, chuva já parece motivo suficiente. O luxo não precisa continuar parecendo luxo. Quando entra na rotina, ganha outro nome: normal.
+> Ontem, pedir comida era exceção. Hoje, é terça-feira. Ontem, o aplicativo de transporte era emergência. Hoje, chuva já parece motivo suficiente. O luxo não precisa continuar parecendo luxo. Quando entra na rotina, ganha outro nome: normal.
 
 ### B011 — A expectativa alcança a renda
 
-E aqui está a primeira recompensa dessa história: seu cérebro não pergunta apenas “quanto eu tenho?”. Ele também pergunta “quanto isso é diferente do que eu já esperava ter?”. Quando a expectativa alcança a renda, parte da sensação de avanço desaparece.
+> E aqui está a primeira recompensa dessa história: seu cérebro não pergunta apenas “quanto eu tenho?”. Ele também pergunta “quanto isso é diferente do que eu já esperava ter?”. Quando a expectativa alcança a renda, parte da sensação de avanço desaparece.
 
 ### 02:08–03:03 — Dinheiro importa, mas não existe número mágico
 
 ### B012 — Segurança material é real
 
-Isso não quer dizer que uma renda maior não possa melhorar a vida. Ela pode ampliar segurança e escolhas, sobretudo quando reduz privações. Pagar moradia, comida, saúde e ter margem para imprevistos não é uma ilusão psicológica.
+> Isso não quer dizer que uma renda maior não possa melhorar a vida. Ela pode ampliar segurança e escolhas, sobretudo quando reduz privações. Pagar moradia, comida, saúde e ter margem para imprevistos não é uma ilusão psicológica.
 
 ### B013 — A associação média
 
-Uma reanálise publicada em 2023 encontrou uma associação positiva entre renda e bem-estar emocional na média. Mas o efeito era pequeno, variava entre grupos e não confirmava aquela história popular de que existe um número mágico depois do qual dinheiro para de fazer diferença para todo mundo.
+> Uma reanálise publicada em 2023 encontrou uma associação positiva entre renda e bem-estar emocional na média. Mas o efeito era pequeno, variava entre grupos e não confirmava aquela história popular de que existe um número mágico depois do qual dinheiro para de fazer diferença para todo mundo.
 
-Então a resposta não é “dinheiro não importa”. É mais desconfortável: dinheiro importa, mas a sensação de suficiente não fica parada esperando a sua renda chegar.
+### B014 — Dinheiro importa, suficiente se move
+
+> Então a resposta não é “dinheiro não importa”. É mais desconfortável: dinheiro importa, mas a sensação de suficiente não fica parada esperando a sua renda chegar.
 
 ### 03:03–04:29 — A comparação troca de elevador
 
-A segunda peça aparece quando o aumento muda o lugar de onde você olha.
+### B015 — A segunda peça
 
-Antes da promoção, você se comparava com pessoas que estavam tentando chegar ao mesmo cargo. Depois dela, começa a conviver com quem já ganha mais, mora melhor e trata gastos maiores como se fossem banais.
+> A segunda peça aparece quando o aumento muda o lugar de onde você olha.
 
-Seu salário subiu um andar. Seu grupo de comparação pegou o mesmo elevador.
+### B016 — O grupo de comparação
 
-Em um estudo britânico, a posição da renda dentro do grupo de comparação previu a satisfação relatada melhor do que olhar somente o valor absoluto. E as comparações para cima receberam mais peso do que as comparações para baixo.
+> Antes da promoção, você se comparava com pessoas que estavam tentando chegar ao mesmo cargo. Depois dela, começa a conviver com quem já ganha mais, mora melhor e trata gastos maiores como se fossem banais.
 
-Isso ajuda a entender uma cena estranha: você pode ganhar mais, viver melhor e ainda se sentir atrasado, porque a régua visível também ficou mais alta.
+### B017 — O mesmo elevador
 
-Não é só impressão. Em um experimento de informação com famílias, descobrir que pares ganhavam mais do que os participantes imaginavam produziu alguma evidência — de magnitude pequena — de realocação do gasto em direção a bens duráveis. Não significa que todo mundo sai comprando. Significa que a informação sobre o outro pode alterar o que parece adequado para você.
+> Seu salário subiu um andar. Seu grupo de comparação pegou o mesmo elevador.
 
-O colega troca de carro. O amigo muda de bairro. A pessoa que apareceu no seu feed chama uma viagem cara de “experiência básica”. E, sem reunião nem aviso, o seu conceito de vida normal recebe uma atualização.
+### B018 — A posição relativa
+
+> Em um estudo britânico, a posição da renda dentro do grupo de comparação previu a satisfação relatada melhor do que olhar somente o valor absoluto. E as comparações para cima receberam mais peso do que as comparações para baixo.
+
+### B019 — A régua mais alta
+
+> Isso ajuda a entender uma cena estranha: você pode ganhar mais, viver melhor e ainda se sentir atrasado, porque a régua visível também ficou mais alta.
+
+### B020 — Informação sobre os pares
+
+> Não é só impressão. Em um experimento de informação com famílias, descobrir que pares ganhavam mais do que os participantes imaginavam produziu alguma evidência — de magnitude pequena — de realocação do gasto em direção a bens duráveis. Não significa que todo mundo sai comprando. Significa que a informação sobre o outro pode alterar o que parece adequado para você.
+
+### B021 — O normal recebe atualização
+
+> O colega troca de carro. O amigo muda de bairro. A pessoa que apareceu no seu feed chama uma viagem cara de “experiência básica”. E, sem reunião nem aviso, o seu conceito de vida normal recebe uma atualização.
 
 ### 04:29–05:51 — O aumento já chega empregado
 
-A terceira peça é a mais concreta. Imagine que Ana recebia quatro mil reais líquidos e ganhou um aumento de mil.
+### B022 — O caso de Ana
 
-Ela não faz nenhuma compra absurda. Só melhora coisas pequenas: trezentos e cinquenta reais num aluguel melhor, cento e oitenta em transporte por aplicativo, cento e setenta em delivery, cento e vinte em assinaturas e plano, cento e trinta em parcelas.
+> A terceira peça é a mais concreta. Imagine que Ana recebia quatro mil reais líquidos e ganhou um aumento de mil.
 
-Sobram cinquenta reais daquele aumento.
+### B023 — Melhorias pequenas
 
-Não é uma média nacional. É apenas uma conta simples para mostrar como melhorias perfeitamente defensáveis podem se transformar em compromissos recorrentes.
+> Ela não faz nenhuma compra absurda. Só melhora coisas pequenas: trezentos e cinquenta reais num aluguel melhor, cento e oitenta em transporte por aplicativo, cento e setenta em delivery, cento e vinte em assinaturas e plano, cento e trinta em parcelas.
 
-O problema não é aproveitar a própria renda. O problema é que prazer e obrigação envelhecem de formas diferentes.
+### B024 — Cinquenta reais
 
-O apartamento melhor deixa de produzir novidade. A parcela continua chegando. O conforto do transporte vira padrão. A cobrança continua chegando. A assinatura some da sua atenção. A cobrança, curiosamente, não.
+> Sobram cinquenta reais daquele aumento.
 
-O aumento vira cenário. A nova despesa vira personagem.
+### B025 — Uma conta ilustrativa
 
-E quando quase todo o ganho recebe uma função fixa, o próximo imprevisto encontra exatamente a mesma falta de folga que existia antes.
+> Não é uma média nacional. É apenas uma conta simples para mostrar como melhorias perfeitamente defensáveis podem se transformar em compromissos recorrentes.
+
+### B026 — Prazer e obrigação
+
+> O problema não é aproveitar a própria renda. O problema é que prazer e obrigação envelhecem de formas diferentes.
+
+### B027 — O conforto vira padrão
+
+> O apartamento melhor deixa de produzir novidade. A parcela continua chegando. O conforto do transporte vira padrão. A cobrança continua chegando. A assinatura some da sua atenção. A cobrança, curiosamente, não.
+
+### B028 — Cenário e personagem
+
+> O aumento vira cenário. A nova despesa vira personagem.
+
+### B029 — A folga desaparece
+
+> E quando quase todo o ganho recebe uma função fixa, o próximo imprevisto encontra exatamente a mesma falta de folga que existia antes.
 
 ### 05:51–07:03 — Onde o “suficiente” se esconde
 
-Junte as três peças.
+### B030 — As três peças
 
-Primeiro, a adaptação transforma melhora em rotina. Depois, a comparação apresenta uma régua mais cara. Por fim, novas despesas convertem renda extra em novo piso.
+> Junte as três peças.
 
-Por isso, “suficiente” não é apenas um número. É também a distância entre o que entra, o que já foi prometido e o que sua cabeça passou a considerar normal.
+### B031 — O novo piso
 
-Uma forma de enxergar o mecanismo é observar o intervalo entre receber mais e assumir novas obrigações permanentes. Não para congelar a vida nem tratar todo conforto como erro. Apenas para separar uma melhora escolhida de uma melhora que entrou no automático.
+> Primeiro, a adaptação transforma melhora em rotina. Depois, a comparação apresenta uma régua mais cara. Por fim, novas despesas convertem renda extra em novo piso.
 
-Se o dinheiro novo ganha um destino antes de o novo normal se instalar, fica mais fácil perceber o aumento como escolha. Se cada pedaço vira custo fixo sem decisão clara, o aumento pode ser enorme no contracheque e invisível na sensação de liberdade.
+### B032 — Onde suficiente se esconde
+
+> Por isso, “suficiente” não é apenas um número. É também a distância entre o que entra, o que já foi prometido e o que sua cabeça passou a considerar normal.
+
+### B033 — Intervalo antes das obrigações
+
+> Uma forma de enxergar o mecanismo é observar o intervalo entre receber mais e assumir novas obrigações permanentes. Não para congelar a vida nem tratar todo conforto como erro. Apenas para separar uma melhora escolhida de uma melhora que entrou no automático.
+
+### B034 — Dinheiro novo com destino
+
+> Se o dinheiro novo ganha um destino antes de o novo normal se instalar, fica mais fácil perceber o aumento como escolha. Se cada pedaço vira custo fixo sem decisão clara, o aumento pode ser enorme no contracheque e invisível na sensação de liberdade.
 
 ### 07:03–07:43 — Callback e CTA
 
-Agora volte para aquela mensagem no celular.
+### B035 — Callback da mensagem
 
-O momento perigoso não é comemorar o aumento. É o período silencioso depois dele, quando pequenos upgrades deixam de parecer escolhas e começam a parecer o mínimo aceitável.
+> Agora volte para aquela mensagem no celular.
 
-O dinheiro não sumiu. A linha de chegada é que aprendeu a andar.
+### B036 — O período silencioso
 
-Se você quer enxergar as forças invisíveis que influenciam suas decisões de dinheiro antes de perceber, inscreva-se no Capital Oculto.
+> O momento perigoso não é comemorar o aumento. É o período silencioso depois dele, quando pequenos upgrades deixam de parecer escolhas e começam a parecer o mínimo aceitável.
+
+### B037 — A linha de chegada
+
+> O dinheiro não sumiu. A linha de chegada é que aprendeu a andar.
+
+### B038 — CTA Capital Oculto
+
+> Se você quer enxergar as forças invisíveis que influenciam suas decisões de dinheiro antes de perceber, inscreva-se no Capital Oculto.
 
 ## Notas de locução
 

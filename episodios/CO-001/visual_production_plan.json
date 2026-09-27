@@ -1,0 +1,301 @@
+{
+  "schema_version": "1.0",
+  "episode_id": "CO-001",
+  "status": "PLANNED",
+  "purpose": "Asset production and reuse plan; does not replace visual_scenes.json or scene_map.json.",
+  "sources": {
+    "visual_scenes": "episodios/CO-001/visual_scenes.json",
+    "scene_map": "episodios/CO-001/scene_map.json",
+    "visual_script": "episodios/CO-001/roteiro_visual.csv",
+    "generation_config": "config/visual_generation.json",
+    "approved_manifest": "output/generated_images/manifest.json"
+  },
+  "production_modes": [
+    "EXISTING_ASSET",
+    "NEW_GENERATIVE_BASE",
+    "REUSE_GENERATIVE_BASE",
+    "LOCAL_REFRAME",
+    "LOCAL_OVERLAY",
+    "LOCAL_DETERMINISTIC"
+  ],
+  "derivation_modes": ["NONE", "CROP", "PAN", "ZOOM", "OVERLAY", "REFRAME", "DETERMINISTIC_CHANGE"],
+  "cost_model": {
+    "currency": "USD",
+    "source": "config/visual_generation.json",
+    "flux_unit_cost": 0.02,
+    "gpt_image_unit_cost": 0.08,
+    "local_unit_cost": 0.0,
+    "current_plan": {
+      "scope": "S019-S048 previously missing visual specifications",
+      "paid_generations": 30,
+      "flux_generations": 26,
+      "gpt_image_generations": 4,
+      "estimated_cost": 0.84
+    },
+    "optimized_plan": {
+      "paid_generations": 8,
+      "flux_generations": 8,
+      "gpt_image_generations": 0,
+      "local_operations": 26,
+      "reused_scenes": 39,
+      "estimated_cost": 0.16,
+      "cost_reduction_percent": 80.95,
+      "target_usd_0_20": "PASS",
+      "stretch_target_usd_0_15": "FAIL"
+    }
+  },
+  "approved_assets": [
+    {"scene_id": "S004", "path": "assets/visual_references/S004.png", "status": "APPROVED_REFERENCE"},
+    {"scene_id": "S007", "path": "assets/visual_references/S007.png", "status": "APPROVED_REFERENCE"},
+    {"scene_id": "S009", "path": "assets/visual_references/S009.png", "status": "APPROVED_REFERENCE"},
+    {"scene_id": "S010", "path": "output/generated_images/drafts/S010.png", "status": "APPROVED"},
+    {"scene_id": "S011", "path": "output/generated_images/drafts/S011.png", "status": "APPROVED"},
+    {"scene_id": "S012", "path": "output/generated_images/drafts/S012.png", "status": "APPROVED"},
+    {"scene_id": "S013", "path": "output/generated_images/drafts/S013.png", "status": "APPROVED"},
+    {"scene_id": "S014", "path": "output/generated_images/drafts/S014.png", "status": "APPROVED"},
+    {"scene_id": "S015", "path": "output/generated_images/drafts/S015.png", "status": "APPROVED"},
+    {"scene_id": "S017", "path": "output/generated_images/drafts/S017.png", "status": "APPROVED"},
+    {"scene_id": "S018", "path": "output/generated_images/drafts/S018.png", "status": "APPROVED"}
+  ],
+  "excluded_existing_assets": [
+    {"scene_id": "S016", "path": "output/generated_images/drafts/S016.png", "reason": "review_status is PENDING"}
+  ],
+  "sequences": [
+    {
+      "sequence_id": "VS001", "scene_ids": ["S001"], "base_scene": "S009", "base_source": "EXISTING",
+      "base_asset": "assets/visual_references/S009.png", "new_provider": null, "estimated_cost": 0.0, "reuse_risk": "MEDIUM",
+      "derivations": [{"scene_id": "S001", "production_mode": "LOCAL_REFRAME", "derivation": "REFRAME", "note": "Use the approved phone/workspace composition with a tighter notification-focused framing."}]
+    },
+    {
+      "sequence_id": "VS002", "scene_ids": ["S002"], "base_scene": "S015", "base_source": "EXISTING",
+      "base_asset": "output/generated_images/drafts/S015.png", "new_provider": null, "estimated_cost": 0.0, "reuse_risk": "LOW",
+      "derivations": [{"scene_id": "S002", "production_mode": "LOCAL_REFRAME", "derivation": "CROP", "note": "Crop the approved kitchen-and-groceries base toward quiet material relief."}]
+    },
+    {
+      "sequence_id": "VS003", "scene_ids": ["S003", "S004"], "base_scene": "S004", "base_source": "EXISTING",
+      "base_asset": "assets/visual_references/S004.png", "new_provider": null, "estimated_cost": 0.0, "reuse_risk": "LOW",
+      "derivations": [
+        {"scene_id": "S003", "production_mode": "LOCAL_REFRAME", "derivation": "ZOOM", "note": "Push toward FIN, the receipt, and terminal to emphasize the disappearing margin."},
+        {"scene_id": "S004", "production_mode": "EXISTING_ASSET", "derivation": "NONE", "note": "Use the approved checkout frame unchanged."}
+      ]
+    },
+    {
+      "sequence_id": "VS004", "scene_ids": ["S005", "S006", "S007"], "base_scene": "S007", "base_source": "EXISTING",
+      "base_asset": "assets/visual_references/S007.png", "new_provider": null, "estimated_cost": 0.0, "reuse_risk": "MEDIUM",
+      "derivations": [
+        {"scene_id": "S005", "production_mode": "LOCAL_REFRAME", "derivation": "PAN", "note": "Pan across the bag, receipt, and entry table as three parts of one routine."},
+        {"scene_id": "S006", "production_mode": "LOCAL_REFRAME", "derivation": "CROP", "note": "Use the apartment depth and newly normalized purchase as environmental context."},
+        {"scene_id": "S007", "production_mode": "EXISTING_ASSET", "derivation": "NONE", "note": "Use the approved receipt realization frame unchanged."}
+      ]
+    },
+    {
+      "sequence_id": "VS005", "scene_ids": ["S008", "S009"], "base_scene": "S009", "base_source": "EXISTING",
+      "base_asset": "assets/visual_references/S009.png", "new_provider": null, "estimated_cost": 0.0, "reuse_risk": "LOW",
+      "derivations": [
+        {"scene_id": "S008", "production_mode": "LOCAL_REFRAME", "derivation": "ZOOM", "note": "Tight phone-focused crop represents initial novelty before pulling out."},
+        {"scene_id": "S009", "production_mode": "EXISTING_ASSET", "derivation": "NONE", "note": "Use the approved routine phone frame unchanged."}
+      ]
+    },
+    {
+      "sequence_id": "VS006", "scene_ids": ["S010"], "base_scene": "S010", "base_source": "EXISTING",
+      "base_asset": "output/generated_images/drafts/S010.png", "new_provider": null, "estimated_cost": 0.0, "reuse_risk": "LOW",
+      "derivations": [{"scene_id": "S010", "production_mode": "EXISTING_ASSET", "derivation": "NONE", "note": "Use the approved longitudinal-study tabletop asset."}]
+    },
+    {
+      "sequence_id": "VS007", "scene_ids": ["S011"], "base_scene": "S011", "base_source": "EXISTING",
+      "base_asset": "output/generated_images/drafts/S011.png", "new_provider": null, "estimated_cost": 0.0, "reuse_risk": "LOW",
+      "derivations": [{"scene_id": "S011", "production_mode": "EXISTING_ASSET", "derivation": "NONE", "note": "Use the approved living-room comparison asset."}]
+    },
+    {
+      "sequence_id": "VS008", "scene_ids": ["S012"], "base_scene": "S012", "base_source": "EXISTING",
+      "base_asset": "output/generated_images/drafts/S012.png", "new_provider": null, "estimated_cost": 0.0, "reuse_risk": "LOW",
+      "derivations": [{"scene_id": "S012", "production_mode": "EXISTING_ASSET", "derivation": "NONE", "note": "Use the approved finance-table asset."}]
+    },
+    {
+      "sequence_id": "VS009", "scene_ids": ["S013"], "base_scene": "S013", "base_source": "EXISTING",
+      "base_asset": "output/generated_images/drafts/S013.png", "new_provider": null, "estimated_cost": 0.0, "reuse_risk": "LOW",
+      "derivations": [{"scene_id": "S013", "production_mode": "EXISTING_ASSET", "derivation": "NONE", "note": "Use the approved ordinary-delivery asset."}]
+    },
+    {
+      "sequence_id": "VS010", "scene_ids": ["S014"], "base_scene": "S014", "base_source": "EXISTING",
+      "base_asset": "output/generated_images/drafts/S014.png", "new_provider": null, "estimated_cost": 0.0, "reuse_risk": "LOW",
+      "derivations": [{"scene_id": "S014", "production_mode": "EXISTING_ASSET", "derivation": "NONE", "note": "Use the approved normalized-comfort apartment asset."}]
+    },
+    {
+      "sequence_id": "VS011", "scene_ids": ["S015", "S016"], "base_scene": "S015", "base_source": "EXISTING",
+      "base_asset": "output/generated_images/drafts/S015.png", "new_provider": null, "estimated_cost": 0.0, "reuse_risk": "LOW",
+      "derivations": [
+        {"scene_id": "S015", "production_mode": "EXISTING_ASSET", "derivation": "NONE", "note": "Use the approved stable-kitchen asset."},
+        {"scene_id": "S016", "production_mode": "LOCAL_REFRAME", "derivation": "ZOOM", "note": "Tighter crop on FIN and essential groceries replaces the unapproved S016 draft."}
+      ]
+    },
+    {
+      "sequence_id": "VS012", "scene_ids": ["S017"], "base_scene": "S017", "base_source": "EXISTING",
+      "base_asset": "output/generated_images/drafts/S017.png", "new_provider": null, "estimated_cost": 0.0, "reuse_risk": "LOW",
+      "derivations": [{"scene_id": "S017", "production_mode": "EXISTING_ASSET", "derivation": "NONE", "note": "Use the approved research-review asset."}]
+    },
+    {
+      "sequence_id": "VS013", "scene_ids": ["S018"], "base_scene": "S018", "base_source": "EXISTING",
+      "base_asset": "output/generated_images/drafts/S018.png", "new_provider": "LOCAL", "estimated_cost": 0.0, "reuse_risk": "LOW",
+      "derivations": [{"scene_id": "S018", "production_mode": "LOCAL_DETERMINISTIC", "derivation": "DETERMINISTIC_CHANGE", "note": "Render from the existing point-distribution schema; no paid request."}]
+    },
+    {
+      "sequence_id": "VS014", "scene_ids": ["S019"], "base_scene": "S012", "base_source": "EXISTING",
+      "base_asset": "output/generated_images/drafts/S012.png", "new_provider": null, "estimated_cost": 0.0, "reuse_risk": "MEDIUM",
+      "derivations": [{"scene_id": "S019", "production_mode": "LOCAL_REFRAME", "derivation": "REFRAME", "note": "Use the finance-table base to contrast receipt groups without introducing an exact number."}]
+    },
+    {
+      "sequence_id": "VS015", "scene_ids": ["S020", "S021", "S022"], "base_scene": "S020", "base_source": "NEW",
+      "base_asset": null, "new_provider": "FLUX", "estimated_cost": 0.02, "reuse_risk": "MEDIUM",
+      "derivations": [
+        {"scene_id": "S020", "production_mode": "NEW_GENERATIVE_BASE", "derivation": "NONE", "note": "Hero office-threshold base establishes the promoted environment."},
+        {"scene_id": "S021", "production_mode": "REUSE_GENERATIVE_BASE", "derivation": "PAN", "note": "Pan toward the simpler workstation zone."},
+        {"scene_id": "S022", "production_mode": "REUSE_GENERATIVE_BASE", "derivation": "REFRAME", "note": "Reframe toward premium work accessories within the same office world."}
+      ]
+    },
+    {
+      "sequence_id": "VS016", "scene_ids": ["S023"], "base_scene": "S023", "base_source": "NEW",
+      "base_asset": null, "new_provider": "FLUX", "estimated_cost": 0.02, "reuse_risk": "LOW",
+      "derivations": [{"scene_id": "S023", "production_mode": "NEW_GENERATIVE_BASE", "derivation": "NONE", "note": "A distinct elevator hero shot is required for the comparison-group payoff."}]
+    },
+    {
+      "sequence_id": "VS017", "scene_ids": ["S024", "S025"], "base_scene": "S024", "base_source": "NEW",
+      "base_asset": null, "new_provider": "FLUX", "estimated_cost": 0.02, "reuse_risk": "LOW",
+      "derivations": [
+        {"scene_id": "S024", "production_mode": "NEW_GENERATIVE_BASE", "derivation": "NONE", "note": "Cafeteria hero base establishes the new comparison context."},
+        {"scene_id": "S025", "production_mode": "REUSE_GENERATIVE_BASE", "derivation": "ZOOM", "note": "Push toward the phone and simple meal for upward comparison."}
+      ]
+    },
+    {
+      "sequence_id": "VS018", "scene_ids": ["S026"], "base_scene": "S014", "base_source": "EXISTING",
+      "base_asset": "output/generated_images/drafts/S014.png", "new_provider": null, "estimated_cost": 0.0, "reuse_risk": "MEDIUM",
+      "derivations": [{"scene_id": "S026", "production_mode": "LOCAL_REFRAME", "derivation": "REFRAME", "note": "Reuse the improved apartment while emphasizing FIN's phone comparison."}]
+    },
+    {
+      "sequence_id": "VS019", "scene_ids": ["S027"], "base_scene": "S017", "base_source": "EXISTING",
+      "base_asset": "output/generated_images/drafts/S017.png", "new_provider": null, "estimated_cost": 0.0, "reuse_risk": "MEDIUM",
+      "derivations": [{"scene_id": "S027", "production_mode": "LOCAL_REFRAME", "derivation": "CROP", "note": "Crop the approved research tabletop into an information-arrival object shot."}]
+    },
+    {
+      "sequence_id": "VS020", "scene_ids": ["S028"], "base_scene": "S028", "base_source": "NEW",
+      "base_asset": null, "new_provider": "FLUX", "estimated_cost": 0.02, "reuse_risk": "LOW",
+      "derivations": [{"scene_id": "S028", "production_mode": "NEW_GENERATIVE_BASE", "derivation": "NONE", "note": "Flexible retail-comparison base supports durable goods and later conscious choice."}]
+    },
+    {
+      "sequence_id": "VS021", "scene_ids": ["S029"], "base_scene": "S029", "base_source": "NEW",
+      "base_asset": null, "new_provider": "FLUX", "estimated_cost": 0.02, "reuse_risk": "LOW",
+      "derivations": [{"scene_id": "S029", "production_mode": "NEW_GENERATIVE_BASE", "derivation": "NONE", "note": "New transit environment cannot be derived credibly from approved home assets."}]
+    },
+    {
+      "sequence_id": "VS022", "scene_ids": ["S030"], "base_scene": "S012", "base_source": "EXISTING",
+      "base_asset": "output/generated_images/drafts/S012.png", "new_provider": null, "estimated_cost": 0.0, "reuse_risk": "LOW",
+      "derivations": [{"scene_id": "S030", "production_mode": "LOCAL_REFRAME", "derivation": "REFRAME", "note": "Finance-table base introduces the household example."}]
+    },
+    {
+      "sequence_id": "VS023", "scene_ids": ["S031"], "base_scene": "S013", "base_source": "EXISTING",
+      "base_asset": "output/generated_images/drafts/S013.png", "new_provider": null, "estimated_cost": 0.0, "reuse_risk": "MEDIUM",
+      "derivations": [{"scene_id": "S031", "production_mode": "LOCAL_REFRAME", "derivation": "PAN", "note": "Pan the approved delivery base to imply accumulated small comforts."}]
+    },
+    {
+      "sequence_id": "VS024", "scene_ids": ["S032"], "base_scene": "S010", "base_source": "EXISTING",
+      "base_asset": "output/generated_images/drafts/S010.png", "new_provider": null, "estimated_cost": 0.0, "reuse_risk": "MEDIUM",
+      "derivations": [{"scene_id": "S032", "production_mode": "LOCAL_REFRAME", "derivation": "CROP", "note": "Crop the approved paper layout into an accumulation of recurring receipts."}]
+    },
+    {
+      "sequence_id": "VS025", "scene_ids": ["S033"], "base_scene": "S012", "base_source": "EXISTING",
+      "base_asset": "output/generated_images/drafts/S012.png", "new_provider": null, "estimated_cost": 0.0, "reuse_risk": "LOW",
+      "derivations": [{"scene_id": "S033", "production_mode": "LOCAL_REFRAME", "derivation": "ZOOM", "note": "Tight crop on FIN, phone, and calculator conveys the small remaining margin."}]
+    },
+    {
+      "sequence_id": "VS026", "scene_ids": ["S034"], "base_scene": "S010", "base_source": "EXISTING",
+      "base_asset": "output/generated_images/drafts/S010.png", "new_provider": null, "estimated_cost": 0.0, "reuse_risk": "LOW",
+      "derivations": [{"scene_id": "S034", "production_mode": "LOCAL_REFRAME", "derivation": "REFRAME", "note": "Use the specific tabletop case to avoid implying a national aggregate."}]
+    },
+    {
+      "sequence_id": "VS027", "scene_ids": ["S035"], "base_scene": "S035", "base_source": "NEW",
+      "base_asset": null, "new_provider": "FLUX", "estimated_cost": 0.02, "reuse_risk": "LOW",
+      "derivations": [{"scene_id": "S035", "production_mode": "NEW_GENERATIVE_BASE", "derivation": "NONE", "note": "Emotional turn between faded pleasure and recurring obligation merits a hero base."}]
+    },
+    {
+      "sequence_id": "VS028", "scene_ids": ["S036"], "base_scene": "S014", "base_source": "EXISTING",
+      "base_asset": "output/generated_images/drafts/S014.png", "new_provider": null, "estimated_cost": 0.0, "reuse_risk": "LOW",
+      "derivations": [{"scene_id": "S036", "production_mode": "LOCAL_REFRAME", "derivation": "PAN", "note": "Pan across the approved improved apartment as normalized scenery."}]
+    },
+    {
+      "sequence_id": "VS029", "scene_ids": ["S037"], "base_scene": "S037", "base_source": "NEW",
+      "base_asset": null, "new_provider": "FLUX", "estimated_cost": 0.02, "reuse_risk": "LOW",
+      "derivations": [{"scene_id": "S037", "production_mode": "NEW_GENERATIVE_BASE", "derivation": "NONE", "note": "Three-force synthesis is a major payoff and needs a dedicated composition."}]
+    },
+    {
+      "sequence_id": "VS030", "scene_ids": ["S038"], "base_scene": "S014", "base_source": "EXISTING",
+      "base_asset": "output/generated_images/drafts/S014.png", "new_provider": null, "estimated_cost": 0.0, "reuse_risk": "MEDIUM",
+      "derivations": [{"scene_id": "S038", "production_mode": "LOCAL_REFRAME", "derivation": "PAN", "note": "A distinct pan and wider hold turn the apartment into morning routine."}]
+    },
+    {
+      "sequence_id": "VS031", "scene_ids": ["S039", "S040"], "base_scene": "S012", "base_source": "EXISTING",
+      "base_asset": "output/generated_images/drafts/S012.png", "new_provider": null, "estimated_cost": 0.0, "reuse_risk": "MEDIUM",
+      "derivations": [
+        {"scene_id": "S039", "production_mode": "LOCAL_REFRAME", "derivation": "PAN", "note": "Pan across phone, calculator, and envelopes as one system."},
+        {"scene_id": "S040", "production_mode": "LOCAL_REFRAME", "derivation": "ZOOM", "note": "Hold a tighter crop on FIN pausing before a new commitment."}
+      ]
+    },
+    {
+      "sequence_id": "VS032", "scene_ids": ["S041"], "base_scene": "S028", "base_source": "NEW",
+      "base_asset": null, "new_provider": "FLUX", "estimated_cost": 0.0, "reuse_risk": "MEDIUM",
+      "derivations": [{"scene_id": "S041", "production_mode": "REUSE_GENERATIVE_BASE", "derivation": "REFRAME", "note": "Reuse the flexible retail base with focus shifted from durable goods to deliberate selection."}]
+    },
+    {
+      "sequence_id": "VS033", "scene_ids": ["S042"], "base_scene": "S012", "base_source": "EXISTING",
+      "base_asset": "output/generated_images/drafts/S012.png", "new_provider": null, "estimated_cost": 0.0, "reuse_risk": "MEDIUM",
+      "derivations": [{"scene_id": "S042", "production_mode": "LOCAL_REFRAME", "derivation": "CROP", "note": "Use the approved envelope arrangement as a three-destination allocation motif without labels."}]
+    },
+    {
+      "sequence_id": "VS034", "scene_ids": ["S043"], "base_scene": "S007", "base_source": "EXISTING",
+      "base_asset": "assets/visual_references/S007.png", "new_provider": null, "estimated_cost": 0.0, "reuse_risk": "MEDIUM",
+      "derivations": [{"scene_id": "S043", "production_mode": "LOCAL_REFRAME", "derivation": "ZOOM", "note": "Receipt-focused crop supports the contrast between a larger slip and persistent commitments."}]
+    },
+    {
+      "sequence_id": "VS035", "scene_ids": ["S044", "S045"], "base_scene": "S014", "base_source": "EXISTING",
+      "base_asset": "output/generated_images/drafts/S014.png", "new_provider": null, "estimated_cost": 0.0, "reuse_risk": "MEDIUM",
+      "derivations": [
+        {"scene_id": "S044", "production_mode": "LOCAL_REFRAME", "derivation": "ZOOM", "note": "Phone-focused callback within the established improved apartment."},
+        {"scene_id": "S045", "production_mode": "LOCAL_REFRAME", "derivation": "PAN", "note": "Wide pan reveals the routine environment and accumulated comforts."}
+      ]
+    },
+    {
+      "sequence_id": "VS036", "scene_ids": ["S046"], "base_scene": "S046", "base_source": "NEW",
+      "base_asset": null, "new_provider": "FLUX", "estimated_cost": 0.02, "reuse_risk": "LOW",
+      "derivations": [{"scene_id": "S046", "production_mode": "NEW_GENERATIVE_BASE", "derivation": "NONE", "note": "Final emotional payoff deserves a dedicated high-quality base."}]
+    },
+    {
+      "sequence_id": "VS037", "scene_ids": ["S047"], "base_scene": "S012", "base_source": "EXISTING",
+      "base_asset": "output/generated_images/drafts/S012.png", "new_provider": null, "estimated_cost": 0.0, "reuse_risk": "LOW",
+      "derivations": [{"scene_id": "S047", "production_mode": "LOCAL_REFRAME", "derivation": "REFRAME", "note": "Return to the finance table with a calmer, wider decision-ready framing."}]
+    },
+    {
+      "sequence_id": "VS038", "scene_ids": ["S048"], "base_scene": "S009", "base_source": "EXISTING",
+      "base_asset": "assets/visual_references/S009.png", "new_provider": null, "estimated_cost": 0.0, "reuse_risk": "MEDIUM",
+      "derivations": [{"scene_id": "S048", "production_mode": "LOCAL_REFRAME", "derivation": "REFRAME", "note": "Use the approved home-workspace world with an end-card-safe calm composition; branding remains editorial."}]
+    }
+  ],
+  "future_local_opportunities": [
+    {"scene_id": "S042", "opportunity": "A future deterministic three-container compositor could replace the existing-envelope reframe."},
+    {"scene_id": "S032", "opportunity": "A future receipt-layout renderer could replace the approved-paper crop."}
+  ],
+  "summary": {
+    "total_scenes": 48,
+    "visual_sequence_count": 38,
+    "new_flux_bases": 8,
+    "new_gpt_bases": 0,
+    "existing_asset_scenes": 10,
+    "existing_asset_reuses": 25,
+    "new_base_reuses": 4,
+    "local_reframes": 25,
+    "local_overlays": 0,
+    "local_deterministic": 1,
+    "max_scenes_from_one_base": 7,
+    "high_reuse_risk_scenes": [],
+    "unassigned_scenes": 0,
+    "external_calls": 0
+  }
+}

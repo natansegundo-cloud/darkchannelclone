@@ -13,7 +13,13 @@ import wave
 from pathlib import Path
 from typing import Any
 
-from src.episodes import EpisodeContext, resolve_active_episode
+from src.episodes import (
+    EpisodeContext,
+    load_visual_script,
+    resolve_active_episode,
+    validate_episode_identity,
+    validate_ordered_subset,
+)
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -182,11 +188,13 @@ def run_preflight(
     root: str | Path = ROOT,
     episode_context: EpisodeContext | None = None,
     narration_path: str | Path | None = None,
+    narration_metadata_path: str | Path | None = None,
     timing_path: str | Path | None = None,
     scene_map_path: str | Path | None = None,
     visual_scenes_path: str | Path | None = None,
     visual_manifest_path: str | Path | None = None,
     motion_contract_path: str | Path | None = None,
+    render_plan_path: str | Path | None = None,
     require_production: bool = False,
 ) -> dict[str, Any]:
     """Validate and resolve all inputs required by a final render."""
@@ -203,6 +211,10 @@ def run_preflight(
         narration_path,
         project_root / "output" / "audio" / context.episode_id / "narration.wav",
     )
+    narration_metadata_file = _as_path(
+        narration_metadata_path,
+        project_root / "output" / "audio" / context.episode_id / "narration.json",
+    )
     timing_file = _as_path(
         timing_path,
         project_root / "output" / "audio" / context.episode_id / "timing.json",
@@ -215,6 +227,10 @@ def run_preflight(
         motion_contract_path,
         project_root / "config" / "motion_contract.json",
     )
+    render_plan_file = _as_path(
+        render_plan_path,
+        project_root / "output" / "render" / context.episode_id / "render_plan.json",
+    )
 
     episode = _read_json(episode_file, errors, "episode config")
     production_stage = episode.get("production_stage") if isinstance(episode, dict) else None
@@ -224,6 +240,13 @@ def run_preflight(
         warnings.append(f"final render is not enabled while production_stage={production_stage}")
 
     timing = _read_json(timing_file, errors, "official narration timing")
+    narration_metadata = None
+    if narration_metadata_file.is_file():
+        narration_metadata = _read_json(
+            narration_metadata_file, errors, "official narration metadata"
+        )
+    elif narration_metadata_path is not None:
+        errors.append(f"official narration metadata not found: {narration_metadata_file}")
     timing_duration: float | None = None
     if isinstance(timing, dict):
         if timing.get("timing_quality") != REAL_TIMING_QUALITY:
@@ -235,6 +258,9 @@ def run_preflight(
             or timing.get("scope") == OFFICIAL_NARRATION_SCOPE
         ):
             errors.append("narration timing is not marked as official_narration")
+        timing_status = str(timing.get("status") or "").upper()
+        if timing_status in {"PENDING", "PARTIAL", "INCOMPLETE", "FAILED"}:
+            errors.append(f"official narration timing is incomplete: {timing_status}")
         try:
             timing_duration = float(timing["duration_seconds"])
             if not math.isfinite(timing_duration) or timing_duration <= 0:
@@ -251,11 +277,76 @@ def run_preflight(
     visual_scene_index = _index_by_scene_id(visual_scenes)
     manifest = _read_json(visual_manifest_file, errors, "visual generation manifest")
     manifest_index = _index_by_scene_id(manifest)
+    render_plan = None
+    if render_plan_file.is_file():
+        render_plan = _read_json(render_plan_file, errors, "existing render plan")
+    elif render_plan_path is not None:
+        errors.append(f"render plan not found: {render_plan_file}")
+
+    errors.extend(
+        validate_episode_identity(
+            context.episode_id,
+            {
+                "episodio.json": episode,
+                "narration metadata": narration_metadata,
+                "timing metadata": timing,
+                "scene_map.json": scene_map,
+                "visual_scenes.json": visual_scenes,
+                "visual manifest": manifest,
+                "render plan": render_plan,
+            },
+            field_overrides={"episodio.json": "episodio_id"},
+        )
+    )
 
     if isinstance(visual_scenes, dict) and not visual_scene_index:
         errors.append("visual_scenes must contain scene metadata")
     if isinstance(manifest, dict) and not manifest_index:
         errors.append("visual generation manifest must contain scene records")
+
+    if production_stage == "production":
+        visual_script_file = context.file("roteiro_visual.csv").resolve()
+        if not visual_script_file.is_file():
+            errors.append(f"visual script not found: {visual_script_file}")
+        else:
+            try:
+                planned_scene_ids = [
+                    str(row.get("scene_id") or "").strip()
+                    for row in load_visual_script(visual_script_file)
+                ]
+            except (OSError, UnicodeError) as exc:
+                errors.append(f"visual script could not be read: {visual_script_file} ({exc})")
+                planned_scene_ids = []
+            if not planned_scene_ids or any(not scene_id for scene_id in planned_scene_ids):
+                errors.append("visual script must declare a non-empty dynamic scene sequence")
+            else:
+                scene_map_ids = [scene["scene_id"] for scene in scenes]
+                visual_scene_ids = list(visual_scene_index)
+                manifest_scene_ids = list(manifest_index)
+                errors.extend(
+                    validate_ordered_subset(
+                        scene_map_ids,
+                        planned_scene_ids,
+                        label="scene_map",
+                        production_stage="production",
+                    )
+                )
+                errors.extend(
+                    validate_ordered_subset(
+                        visual_scene_ids,
+                        planned_scene_ids,
+                        label="visual_scenes",
+                        production_stage="production",
+                    )
+                )
+                errors.extend(
+                    validate_ordered_subset(
+                        manifest_scene_ids,
+                        planned_scene_ids,
+                        label="visual manifest",
+                        production_stage="production",
+                    )
+                )
 
     for scene in scenes:
         scene_id = scene["scene_id"]
@@ -333,19 +424,23 @@ def run_preflight(
         "paths": {
             "episode": episode_file,
             "narration": narration_file,
+            "narration_metadata": narration_metadata_file,
             "timing": timing_file,
             "scene_map": scene_map_file,
             "visual_scenes": visual_scenes_file,
             "visual_manifest": visual_manifest_file,
             "motion_contract": motion_contract_file,
+            "render_plan": render_plan_file,
         },
         "sources": {
             "episode": _display_path(episode_file, project_root),
             "narration": _display_path(narration_file, project_root),
+            "narration_metadata": _display_path(narration_metadata_file, project_root),
             "timing": _display_path(timing_file, project_root),
             "scene_map": _display_path(scene_map_file, project_root),
             "visual_scenes": _display_path(visual_scenes_file, project_root),
             "visual_manifest": _display_path(visual_manifest_file, project_root),
             "motion_contract": _display_path(motion_contract_file, project_root),
+            "render_plan": _display_path(render_plan_file, project_root),
         },
     }
