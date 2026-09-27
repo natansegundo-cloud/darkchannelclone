@@ -49,7 +49,13 @@ SECTION_ORDER = (
     "NEGATIVE RULES",
 )
 
-SUBJECT_COUNT_ONE_FIN = "ONE FIN only. No additional people."
+SUBJECT_COUNT_ONE_FIN = (
+    "Exactly one FIN character. No FIN clones. No duplicate FIN character. No duplicate character. "
+    "No clone. No second version of FIN. No mirrored duplicate unless explicitly required by scene "
+    "spec. Secondary people must not share FIN identity. Secondary people must not use a lime tie "
+    "or FIN signature outfit unless explicitly required by scene spec. Other non-FIN people are "
+    "allowed only when explicitly required by the scene spec."
+)
 NO_CHARACTER_RULE = (
     "NO CHARACTERS. NO PEOPLE. NO FIN. Do not depict or imply any person, human figure, "
     "face, body, mascot, or character."
@@ -118,8 +124,15 @@ FIN_PRESENCE_RULESET = (
     "the frame, with a natural functional pose and an expression serving the situation."
 )
 NO_UNDECLARED_TEXT_RULE = (
-    "NO UNDECLARED TEXT. No readable text, random numbers, invented labels, pseudo-words, "
-    "gibberish, or floating typography anywhere."
+    "NO UNDECLARED TEXT. No readable text, no letters, no numbers, no logos, no pseudo-text, "
+    "and no gibberish typography. No random numbers, invented labels, pseudo-words, gibberish, "
+    "or floating typography anywhere."
+)
+TEXT_BEARING_OBJECT_RULE = (
+    "If a calendar, clipboard, document, receipt, menu, sign, screen, book, newspaper, label, "
+    "poster, or any other normally text-bearing object is present, keep the object in the scene "
+    "but represent its content only with blank or abstract graphical markings, non-readable lines "
+    "and shapes, and no legible characters."
 )
 
 
@@ -201,12 +214,14 @@ def _text_policy(scene: Mapping[str, Any]) -> str:
     if mode == "NONE":
         return (
             "NONE. No narratively necessary text exists in this scene. Render no visible text, no letters, "
-            f"no numbers, and no labels. {NO_UNDECLARED_TEXT_RULE}"
+            f"no numbers, no logos, and no labels. {NO_UNDECLARED_TEXT_RULE} "
+            f"{TEXT_BEARING_OBJECT_RULE}"
         )
     targets = ", ".join(str(item["target"]) for item in items) or "the declared target surfaces"
     return (
         "OVERLAY. Declared text and numbers are structured metadata only. Do not render their content. "
         f"Generate clean blank surfaces reserved for later deterministic text overlay on {targets}. "
+        "Use neutral visual placeholders only. Exact text is applied deterministically after image generation. "
         f"{NO_UNDECLARED_TEXT_RULE}"
     )
 
@@ -361,7 +376,11 @@ def _build_sections(scene: Mapping[str, Any]) -> dict[str, str]:
         "ENVIRONMENT": scene["environment"],
         "PROPS": ", ".join(scene["props"]) if scene["props"] else "No declared narrative props.",
         "FRAMING": _framing(scene, has_fin),
-        "SUBJECT COUNT": SUBJECT_COUNT_ONE_FIN if has_fin else NO_CHARACTER_RULE,
+        "SUBJECT COUNT": (
+            SUBJECT_COUNT_ONE_FIN
+            if scene_type == "CHARACTER_SCENE"
+            else ("FIN presence follows the scene spec." if has_fin else NO_CHARACTER_RULE)
+        ),
         "CHARACTER CONSISTENCY": _character_consistency(scene, character_lock, has_fin),
         "LIGHTING": scene["lighting"],
         "STYLE": _style_rules(profile, scene_type, has_fin),

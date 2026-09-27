@@ -408,6 +408,24 @@ class PromptCompilationTest(unittest.TestCase):
             self.assertNotIn(character_rule, object_prompt)
             self.assertNotIn(character_rule, data_prompt)
 
+    def test_character_scene_requires_exactly_one_non_duplicated_fin(self) -> None:
+        prompt = build_prompt(build_generation_jobs(["S004"])[0])
+
+        for rule in (
+            "Exactly one FIN character",
+            "No FIN clones",
+            "No duplicate FIN character",
+            "No duplicate character",
+            "No clone",
+            "No second version of FIN",
+            "No mirrored duplicate unless explicitly required by scene spec",
+            "Secondary people must not share FIN identity",
+            "Secondary people must not use a lime tie or FIN signature outfit",
+        ):
+            self.assertIn(rule, prompt)
+
+        self.assertNotIn("S004", inspect.getsource(prompt_builder))
+
     def test_none_policy_forbids_undeclared_text_explicitly(self) -> None:
         prompt = build_prompt(build_generation_jobs(["S009"])[0])
 
@@ -416,6 +434,11 @@ class PromptCompilationTest(unittest.TestCase):
         self.assertIn("NO UNDECLARED TEXT.", prompt)
         for forbidden_kind in (
             "No readable text",
+            "no letters",
+            "no numbers",
+            "no logos",
+            "no pseudo-text",
+            "no gibberish typography",
             "random numbers",
             "invented labels",
             "pseudo-words",
@@ -427,6 +450,28 @@ class PromptCompilationTest(unittest.TestCase):
         self.assertNotIn("PESQUISA", prompt)
         self.assertNotIn("MÊS 1", prompt)
         self.assertEqual(prompt.count("TEXT POLICY:"), 1)
+
+    def test_none_policy_keeps_clipboard_with_abstract_markings(self) -> None:
+        scene = deepcopy(build_generation_jobs(["S004"])[0])
+        scene["props"] = ["clipboard"]
+        prompt = build_prompt(scene)
+
+        self.assertIn("clipboard", prompt)
+        self.assertIn("keep the object in the scene", prompt)
+        self.assertIn("blank or abstract graphical markings", prompt)
+        self.assertIn("non-readable lines and shapes", prompt)
+        self.assertIn("no legible characters", prompt)
+
+    def test_none_policy_keeps_calendar_without_legible_text(self) -> None:
+        scene = deepcopy(build_generation_jobs(["S004"])[0])
+        scene["props"] = ["calendar"]
+        prompt = build_prompt(scene)
+
+        self.assertIn("calendar", prompt)
+        self.assertIn("No readable text", prompt)
+        self.assertIn("no letters", prompt)
+        self.assertIn("no numbers", prompt)
+        self.assertNotIn("render calendar text", prompt.lower())
 
     def test_s010_overlay_keeps_text_in_metadata_and_out_of_provider_prompt(self) -> None:
         scene = build_generation_jobs(["S010"])[0]
@@ -464,6 +509,8 @@ class PromptCompilationTest(unittest.TestCase):
             prompt,
         )
         self.assertIn("Do not render their content.", prompt)
+        self.assertIn("neutral visual placeholders", prompt)
+        self.assertIn("Exact text is applied deterministically after image generation.", prompt)
         self.assertIn("NO UNDECLARED TEXT.", prompt)
         self.assertNotIn("Declared text must appear exactly as written.", prompt)
         self.assertNotIn("R$ 4.200", prompt)
